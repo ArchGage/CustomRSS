@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom RSS & Twitch v0.42</title>
+  <title>Custom RSS & Twitch v0.43</title>
   <style>
     /* ── COLOR VARIABLES FOR PURPLE GRADIENT THEME ── */
     :root {
@@ -42,21 +42,6 @@
       margin: 0; padding: 0; overflow-x: hidden;
     }
     h1 { margin: 0; padding: 1rem; font-weight: 400; }
-
-    /* ── POP-IN ANIMATION ── */
-    @keyframes popIn {
-      0% {
-        transform: scale(0);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-    .pop-in {
-      animation: popIn 0.3s ease-out;
-    }
 
     /* ── LIVE BAR (always at top) ── */
     #liveBar {
@@ -458,7 +443,7 @@
       background: #aa1111;
     }
 
-    /* ── TWITCH QUEUE UI ── */
+    /* ── TWITCH QUEUE UI (v0.43) ── */
     #twitchContainer {
       padding: 1rem;
     }
@@ -479,7 +464,7 @@
       background: var(--bg-button-hover);
     }
 
-    /* ── TWITCH QUEUE: Draggable Icon List ── */
+    /* Draggable circle icons */
     #twitchList {
       display: flex;
       gap: 0.5rem;
@@ -496,6 +481,11 @@
       border-radius: 50%;
       overflow: hidden;
       border: 2px solid var(--text-primary);
+      transition: transform 0.15s ease;
+    }
+    .twitch-icon-item.drag-active {
+      opacity: 0.6;
+      transform: scale(1.1);
     }
     .twitch-icon-item.drag-over {
       outline: 2px dashed var(--text-accent);
@@ -505,6 +495,8 @@
       height: 100%;
       object-fit: cover;
       border-radius: 50%;
+      pointer-events: none;
+      user-select: none;
     }
 
     #twitchPlayerContainer {
@@ -519,16 +511,20 @@
     #twitchStatus {
       margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);
     }
-  </style>
 
-  <!-- ── YouTube IFrame API ── -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+    /* ── POP‐IN ANIMATION FOR RSS ITEMS ── */
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in {
+      animation: popIn 0.3s ease-out;
+    }
+  </style>
 </head>
 <body>
   <!-- ── LIVE BAR ── -->
-  <div id="liveBar">
-    <!-- Twitch avatars will appear here when live -->
-  </div>
+  <div id="liveBar"></div>
 
   <!-- ── SIDE MENU BACKDROP ── -->
   <div id="sideBackdrop" onclick="closeSideMenu()"></div>
@@ -567,7 +563,7 @@
 
   <!-- ── HEADER with Version, Main Tabs, Filters & Refresh ── -->
   <div class="header">
-    <div class="version-label">v0.42</div>
+    <div class="version-label">v0.43</div>
     <button class="burger-button" onclick="toggleSideMenu()">☰</button>
     <div class="main-tabs">
       <button id="tabRSS" class="active">RSS Feeds</button>
@@ -587,7 +583,7 @@
     <button class="refresh-button" id="btnRefresh">Refresh Feed</button>
   </div>
 
-  <!-- ── RSS Tab Content ── -->
+  <!-- ── RSS Tab Content (unchanged) ── -->
   <div id="rssContainer" class="tab-content active">
     <div id="mainContent">
       <div id="feedsContainer"></div>
@@ -604,9 +600,7 @@
     <div id="twitchList">
       <!-- Draggable avatar icons will be inserted here -->
     </div>
-    <div id="twitchPlayerContainer">
-      <!-- The Twitch embed iframe will go here -->
-    </div>
+    <div id="twitchPlayerContainer"></div>
     <div id="twitchStatus"></div>
   </div>
 
@@ -620,17 +614,11 @@
         <button
           class="close-arrow"
           onclick="closeOverlay(); event.stopPropagation();"
-        >
-          ←
-        </button>
-        <div class="overlay-live-icons" id="overlayLiveIcons">
-          <!-- Twitch avatars for live channels -->
-        </div>
+        >←</button>
+        <div class="overlay-live-icons" id="overlayLiveIcons"></div>
       </div>
       <div class="video-left">
-        <div class="video-wrapper-container" id="videoContainer">
-          <!-- YouTube <div id="yt-player"> created dynamically -->
-        </div>
+        <div class="video-wrapper-container" id="videoContainer"></div>
         <div class="video-info">
           <h2 id="videoTitle"></h2>
           <p id="videoDesc"></p>
@@ -638,14 +626,10 @@
             class="read-more-button"
             id="readMoreBtn"
             onclick="toggleDescription()"
-          >
-            Read More
-          </button>
+          >Read More</button>
         </div>
       </div>
-      <div class="video-right" id="queueList">
-        <!-- Current video card + all future videos (now extends to bottom) -->
-      </div>
+      <div class="video-right" id="queueList"></div>
     </div>
   </div>
 
@@ -786,7 +770,7 @@
     updateOverlayLiveIcons();
 
     /**************************************
-     *  RSS FEEDS CODE (v0.42)
+     *  RSS FEEDS CODE (v0.43; unchanged)
      **************************************/
     function clearAllCache() {
       if (!confirm("Clear ALL data including feeds?")) return;
@@ -1009,7 +993,7 @@
         const isYouTube = data.feedUrl.includes("youtube.com");
         const isPatreon = data.feedUrl.includes("patreon.com");
 
-        // SKIP Patreon here entirely (won’t appear in “Up Next”)
+        // SKIP Patreon in the main queue (so it never appears in the “Up Next”)
         if (isPatreon) return;
 
         // 1) Source filter
@@ -1022,7 +1006,7 @@
         // 3) Shorts filter
         if (data.isShort && chkHideShortsGlobal) return;
 
-        // 4) Video vs. other
+        // 4) Must be a “video” entry
         if (data.entryType !== "video") return;
 
         videoQueue.push({
@@ -1166,9 +1150,9 @@
               let thumbUrl = "";
               let isAudio = false;
 
-              // ── P A T R E O N   L O G I C (REVISED) ──
+              // ── P A T R E O N   L O G I C ──
               if (feedUrl.includes("patreon.com")) {
-                // Treat all Patreon posts as video unless "audio" appears in the title:
+                // Treat all Patreon posts as video unless "audio" in title
                 if (/audio/i.test(title)) {
                   entryType = "audio";
                   isAudio = true;
@@ -1718,7 +1702,7 @@
     setInterval(parseFeeds, 5 * 60 * 1000);
 
     /**************************************
-     *  TWITCH QUEUE CODE (v0.42)
+     *  TWITCH QUEUE CODE (v0.43)
      **************************************/
     let twitchInterval = null;
     let currentTwitchChannel = null;
@@ -1738,76 +1722,128 @@
       renderTwitchList();
     }
 
+    // If we remove a channel, rerender:
     function removeTwitchChannel(idx) {
       twitchChannels.splice(idx, 1);
       saveAll();
       renderTwitchList();
     }
 
-    function changeTwitchPriority(idx, newPrio) {
-      if (newPrio < 1) newPrio = 1;
-      twitchChannels[idx].priority = newPrio;
-      saveAll();
-      renderTwitchList();
-    }
-
-    // New: Recompute priorities after reorder
+    // Recompute .priority after reorder
     function normalizePriorities() {
       twitchChannels.sort((a, b) => a.priority - b.priority);
       twitchChannels.forEach((c, i) => c.priority = i + 1);
       saveAll();
     }
 
-    // Render a row of draggable avatar icons
     function renderTwitchList() {
       const list = document.getElementById("twitchList");
       list.innerHTML = "";
-      // Sort by priority before rendering
+      // Sort by priority first
       twitchChannels.sort((a, b) => a.priority - b.priority);
 
       twitchChannels.forEach((c, idx) => {
         const item = document.createElement("div");
         item.className = "twitch-icon-item";
-        item.setAttribute("draggable", "true");
         item.setAttribute("data-index", idx);
 
-        // If avatar already known, use it; otherwise fallback to a generic URL
+        // If avatar already known, use it; otherwise fallback:
         const img = document.createElement("img");
         img.src = c.avatar ||
           `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
         img.alt = c.name;
         item.appendChild(img);
 
-        // Drag and Drop handlers
-        item.addEventListener("dragstart", (e) => {
-          e.dataTransfer.setData("text/plain", idx.toString());
-        });
-        item.addEventListener("dragover", (e) => {
-          e.preventDefault();
-          item.classList.add("drag-over");
-        });
-        item.addEventListener("dragleave", () => {
-          item.classList.remove("drag-over");
-        });
-        item.addEventListener("drop", (e) => {
-          e.preventDefault();
-          item.classList.remove("drag-over");
-          const sourceIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-          const targetIdx = parseInt(item.getAttribute("data-index"), 10);
-          if (sourceIdx === targetIdx) return;
-
-          // Reorder twitchChannels: remove source, insert at target
-          const [moved] = twitchChannels.splice(sourceIdx, 1);
-          twitchChannels.splice(targetIdx, 0, moved);
-          normalizePriorities();
-
-          // Re-render in new order
-          renderTwitchList();
-        });
+        // START: Mouse‐draggable logic
+        item.addEventListener("mousedown", (e) => onDragStart(e, idx));
+        // END: Mouse‐draggable logic
 
         list.appendChild(item);
       });
     }
+
+    // === MOUSE‐DRAG “FOLLOW CURSOR” IMPLEMENTATION ===
+    let dragInfo = null; // Will hold { sourceIdx, cloneElem, initialX, initialY }
+
+    function onDragStart(e, sourceIdx) {
+      e.preventDefault();
+      const original = e.currentTarget;
+      const rect = original.getBoundingClientRect();
+
+      // 1) Clone the element for dragging animation
+      const clone = original.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.left = `${rect.left}px`;
+      clone.style.top = `${rect.top}px`;
+      clone.style.width = `${rect.width}px`;
+      clone.style.height = `${rect.height}px`;
+      clone.style.pointerEvents = "none";
+      clone.style.zIndex = 20000;
+      clone.classList.add("drag-active");
+      document.body.appendChild(clone);
+
+      dragInfo = {
+        sourceIdx,
+        cloneElem: clone,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top
+      };
+
+      document.addEventListener("mousemove", onDragging);
+      document.addEventListener("mouseup", onDrop);
+    }
+
+    function onDragging(e) {
+      if (!dragInfo) return;
+      // Move the clone to follow cursor
+      dragInfo.cloneElem.style.left = `${e.clientX - dragInfo.offsetX}px`;
+      dragInfo.cloneElem.style.top = `${e.clientY - dragInfo.offsetY}px`;
+
+      // Highlight potential drop target
+      document.querySelectorAll(".twitch-icon-item").forEach((el) => {
+        el.classList.remove("drag-over");
+      });
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      if (under) {
+        const target = under.closest(".twitch-icon-item");
+        if (target && target.getAttribute("data-index") !== null) {
+          target.classList.add("drag-over");
+        }
+      }
+    }
+
+    function onDrop(e) {
+      if (!dragInfo) return;
+      document.removeEventListener("mousemove", onDragging);
+      document.removeEventListener("mouseup", onDrop);
+
+      // Determine drop target
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      let targetIdx = null;
+      if (under) {
+        const target = under.closest(".twitch-icon-item");
+        if (target && target.getAttribute("data-index") !== null) {
+          targetIdx = parseInt(target.getAttribute("data-index"), 10);
+          target.classList.remove("drag-over");
+        }
+      }
+
+      // Remove the clone
+      document.body.removeChild(dragInfo.cloneElem);
+
+      const sourceIdx = dragInfo.sourceIdx;
+      dragInfo = null;
+
+      // If dropped on valid target (and different index), reorder:
+      if (targetIdx !== null && targetIdx !== sourceIdx) {
+        const [moved] = twitchChannels.splice(sourceIdx, 1);
+        twitchChannels.splice(targetIdx, 0, moved);
+        normalizePriorities();
+      }
+
+      renderTwitchList();
+    }
+    // =================================================
 
     async function checkTwitchTracker(channel) {
       // Fetch via AllOrigins to avoid CORS issues
@@ -1903,5 +1939,8 @@
     startTwitchPolling();
     renderTwitchList();
   </script>
+
+  <!-- ── YouTube IFrame API ── -->
+  <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
