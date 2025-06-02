@@ -45,7 +45,7 @@
 
     /* ── LIVE BAR (always at top) ── */
     #liveBar {
-      position: sticky; top: 0; z-index: 2000;
+      position: sticky; top: 0; z-index: 1000;
       background: var(--live-bar-bg);
       padding: 0.25rem 1rem;
       display: flex; align-items: center; gap: 0.5rem;
@@ -67,8 +67,8 @@
       display: flex; align-items: center;
       background: rgba(0, 0, 0, 0.5);
       padding: 0.5rem 1rem; position: sticky;
-      top: 32px; /* just below liveBar */
-      z-index: 1000;
+      top: 42px; /* just below liveBar */
+      z-index: 999;
     }
     .burger-button {
       font-size: 1.5rem; background: none;
@@ -115,16 +115,6 @@
     }
     .filter-categories button:hover {
       background: var(--bg-button-hover);
-    }
-    .log-button {
-      margin-left: 1rem;
-      background: #444; color: var(--text-primary);
-      border: none; border-radius: 4px;
-      padding: 0.4rem 0.8rem; cursor: pointer;
-      font-size: 0.9rem; transition: background 0.2s ease;
-    }
-    .log-button:hover {
-      background: #666;
     }
 
     /* ── SIDE MENU BACKDROP ── */
@@ -215,11 +205,19 @@
     .entry-card {
       background: var(--bg-card); border-radius: 12px;
       overflow: hidden; cursor: pointer;
-      transition: background 0.2s ease;
-      position: relative; display: flex;
-      flex-direction: column; align-items: center;
+      transition: background-color 0.2s ease;
+      transform-origin: center;
+      opacity: 1;
+      transform: scale(1);
     }
     .entry-card:hover { background: var(--bg-card-hover); }
+    .entry-card a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+      color: inherit;
+    }
     .thumbnail-wrapper {
       width: 100%; position: relative;
       padding-top: 56.25%; overflow: hidden;
@@ -446,6 +444,8 @@
     /* ── TWITCH QUEUE UI (updated) ── */
     #twitchContainer {
       padding: 1rem;
+      position: relative;
+      z-index: 1;
     }
     #twitchControls {
       display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
@@ -467,42 +467,43 @@
     /* Draggable circle icons (with drag-over highlight) */
     #twitchList {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
       margin-top: 1rem;
-    }
-    .twitch-icon-item {
-      cursor: grab;
-      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid var(--text-primary);
-      transition: transform 0.15s ease, outline 0.15s ease, border-color 0.2s ease;
+      position: relative;
+      z-index: 2;
+    }
+    .twitch-icon-wrapper {
       position: relative;
     }
-    .twitch-icon-item.live {
-      border-color: #ff0000;
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    .twitch-icon-item {
+      width: 50px;
+      height: 50px;
+      position: relative;
+      cursor: grab;
     }
-    .twitch-icon-item.drag-active {
-      opacity: 0.6;
-      transform: scale(1.1);
+    .twitch-icon-item.dragging {
       cursor: grabbing;
-    }
-    .twitch-icon-item.drag-over {
-      outline: 2px dashed var(--text-accent);
+      opacity: 0.5;
     }
     .twitch-icon-item img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
       border-radius: 50%;
+      border: 2px solid var(--text-primary);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      object-fit: cover;
       pointer-events: none;
-      user-select: none;
+    }
+    .twitch-icon-item.live img {
+      border-color: #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    }
+    .twitch-icon-item.drop-target img {
+      transform: scale(1.1);
+      border-color: var(--text-accent);
+      box-shadow: 0 0 15px var(--text-accent);
     }
 
     #twitchPlayerContainer {
@@ -518,16 +519,178 @@
       margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);
     }
 
+    .log-button {
+      margin-left: 1rem;
+      background: #444; color: var(--text-primary);
+      border: none; border-radius: 4px;
+      padding: 0.4rem 0.8rem; cursor: pointer;
+      font-size: 0.9rem; transition: background 0.2s ease;
+    }
+    .log-button:hover {
+      background: #666;
+    }
+
     #version-indicator {
       position: fixed;
-      top: 0.5rem;
-      right: 0.5rem;
+      top: 8px;
+      right: 8px;
       background: rgba(0, 0, 0, 0.5);
       color: var(--text-secondary);
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.8rem;
-      z-index: 1000;
+      z-index: 1001;
+    }
+
+    /* ── FOLDER FILTER STYLES ── */
+    .filter-checkboxes select {
+      background: var(--bg-button);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .filter-checkboxes select:hover {
+      background: var(--bg-button-hover);
+    }
+
+    /* ── FOLDER FILTER STYLES ── */
+    .folder-filter {
+      margin-left: 1rem;
+      background: var(--bg-button);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .folder-filter:hover {
+      background: var(--bg-button-hover);
+    }
+
+    /* Card animations */
+    .entry-card.new-insert {
+      opacity: 0;
+      transform: scale(0.8);
+      animation: popIn 0.3s ease-out forwards;
+    }
+
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Add these styles after the existing styles */
+    .twitch-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-overlay);
+      z-index: 10000;
+      display: none;
+      padding: 2rem;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .twitch-overlay.show {
+      display: flex;
+      justify-content: center;
+    }
+    .twitch-sort-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      overflow-y: auto;
+      height: calc(100vh - 6rem);
+      padding-right: 0.5rem;
+    }
+    .twitch-sort-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .twitch-sort-list::-webkit-scrollbar-thumb {
+      background: rgba(200, 200, 200, 0.3);
+      border-radius: 3px;
+    }
+    .twitch-sort-list .twitch-icon-wrapper {
+      position: relative;
+    }
+    .twitch-sort-list .twitch-icon-item {
+      width: 50px;
+      height: 50px;
+      position: relative;
+      cursor: grab;
+    }
+    .twitch-sort-list .twitch-icon-item.dragging {
+      cursor: grabbing;
+      opacity: 0.5;
+    }
+    .twitch-sort-list .twitch-icon-item img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--text-primary);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .twitch-sort-list .twitch-icon-item.live img {
+      border-color: #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    }
+    .twitch-sort-list .twitch-icon-item.drop-target img {
+      transform: scale(1.1);
+      border-color: var(--text-accent);
+      box-shadow: 0 0 15px var(--text-accent);
+    }
+    .twitch-chat-container {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .twitch-chat-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Add pop-in animation for Twitch icons */
+    .twitch-icon-wrapper {
+      opacity: 1; /* Changed from 0 to ensure visibility by default */
+      transform: none; /* Remove default transform */
+    }
+    .twitch-icon-wrapper.new-insert {
+      animation: popIn 0.3s ease-out forwards;
+    }
+    
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
   </style>
 
@@ -564,6 +727,7 @@
       <button onclick="addFolder()">+ Add Folder</button>
 
       <button onclick="showManageFeeds()">Manage Feeds</button>
+      <button onclick="downloadLog()">Download Log</button>
       <button onclick="clearAllCache()" style="background: #cc0000;">
         Clear Everything
       </button>
@@ -591,7 +755,9 @@
       <button id="btnOld">Unwatched</button>
       <button id="btnWatched">Watched</button>
     </div>
-    <button class="log-button" onclick="downloadLog()">Download Log</button>
+    <select id="folderFilter" class="folder-filter">
+      <option value="ALL">All Folders</option>
+    </select>
   </div>
 
   <!-- ── RSS Tab Content ── -->
@@ -666,11 +832,36 @@
     <div class="manage-feed-list" id="manageFeedList"></div>
   </div>
 
+  <!-- ── TWITCH OVERLAY ── -->
+  <div class="twitch-overlay" id="twitchOverlay" onclick="closeTwitchOverlay(event)">
+    <div class="overlay-content">
+      <div class="left-column">
+        <button class="close-arrow" onclick="closeTwitchOverlay(); event.stopPropagation();">←</button>
+        <div class="twitch-sort-list" id="twitchSortList">
+          <!-- Twitch channel icons will be here -->
+        </div>
+      </div>
+      <div class="video-left">
+        <div class="video-wrapper-container" id="twitchPlayerWrapper">
+          <!-- Twitch player will be created here -->
+        </div>
+        <div class="video-info">
+          <h2 id="twitchChannelTitle"></h2>
+        </div>
+      </div>
+      <div class="video-right">
+        <div class="twitch-chat-container" id="twitchChatContainer">
+          <!-- Twitch chat will be embedded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     /**************************************
      *  GLOBAL CONFIG
      **************************************/
-    const APP_VERSION = 'v0.58';
+    const APP_VERSION = 'v0.79';
     // Set version indicator
     document.title = `Custom RSS ${APP_VERSION}`;
     document.getElementById('version-indicator').textContent = APP_VERSION;
@@ -752,10 +943,15 @@
     /**************************************
      *  LIVE BAR (Twitch Icons)
      **************************************/
-    async function updateLiveBar() {
+    function updateLiveBar() {
       const bar = document.getElementById("liveBar");
       bar.innerHTML = "";
-      for (const c of twitchChannels) {
+
+      // Sort channels by priority first
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      // Then display only live ones in that order
+      for (const c of sortedChannels) {
         if (c.live) {
           const avatarUrl = c.avatar ||
             `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
@@ -764,19 +960,22 @@
           icon.title = c.name;
           icon.classList.add('live');
           icon.onclick = () => {
-            btnTwitch.click();
-            currentTwitchChannel = c.name;
-            playTwitchChannel(c.name);
+            openTwitchOverlay(c.name);
           };
           bar.appendChild(icon);
         }
       }
     }
 
-    async function updateOverlayLiveIcons() {
+    function updateOverlayLiveIcons() {
       const container = document.getElementById("overlayLiveIcons");
       container.innerHTML = "";
-      for (const c of twitchChannels) {
+
+      // Sort channels by priority first
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      // Then display only live ones in that order
+      for (const c of sortedChannels) {
         if (c.live) {
           const avatarUrl = c.avatar ||
             `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
@@ -784,9 +983,7 @@
           icon.src = avatarUrl;
           icon.title = c.name;
           icon.onclick = () => {
-            btnTwitch.click();
-            currentTwitchChannel = c.name;
-            playTwitchChannel(c.name);
+            openTwitchOverlay(c.name);
           };
           container.appendChild(icon);
         }
@@ -805,18 +1002,25 @@
      *  RSS FEEDS CODE (v0.37)
      **************************************/
     function clearAllCache() {
-      if (!confirm("Clear ALL data including feeds?")) return;
+      if (!confirm("Clear ALL data including feeds and Twitch channels?")) return;
       localStorage.clear();
       feeds = [];
       folders = [];
       videoHistory = {};
       videoStore = {};
       watchedVideos = [];
+      twitchChannels = [];
       document.getElementById("feedsContainer").innerHTML = "";
+      document.getElementById("twitchPlayerContainer").innerHTML = "";
+      document.getElementById("twitchStatus").textContent = "No channels in queue.";
       updateFolderDropdown();
-      addLog("Cleared entire cache (feeds, video history, store, watched list).");
+      addLog("Cleared entire cache (feeds, video history, store, watched list, and Twitch channels).");
       initialRender();
-      parseFeeds(); // restart parse on empty store
+      parseFeeds();
+      renderTwitchList();
+      renderTwitchSortList();
+      updateLiveBar();
+      updateOverlayLiveIcons();
     }
     function clearVideoCache() {
       if (!confirm("Clear only saved video info?")) return;
@@ -932,6 +1136,7 @@
     // INITIAL RENDER: show everything already in videoStore
     function initialRender() {
       updateFolderDropdown();
+      updateFolderFilter(); // Add this line
       document.getElementById("feedsContainer").innerHTML = "";
       buildQueueFromStore();
       const watchedSet = new Set(watchedVideos);
@@ -1013,11 +1218,18 @@
       const chkPatreon = document.getElementById("filterPatreon").checked;
       const chkHideAudio = document.getElementById("filterAudio").checked;
       const chkHideShortsGlobal = document.getElementById("filterShort").checked;
+      const selectedFolder = document.getElementById("folderFilter").value;
 
       allIDs.forEach((vid) => {
         const data = videoStore[vid];
         const isYouTube = data.feedUrl.includes("youtube.com");
         const isPatreon = data.feedUrl.includes("patreon.com");
+        const feed = feeds.find(f => f.url === data.feedUrl);
+        const hideShortsForFeed = feed?.shortFilter;
+        const feedFolder = feed?.folder || "";
+
+        // Folder filter
+        if (selectedFolder !== "ALL" && feedFolder !== selectedFolder) return;
 
         // 1) Source filter
         if (isYouTube && !chkYouTube) return;
@@ -1027,7 +1239,7 @@
         if (data.entryType === "audio" && chkHideAudio) return;
 
         // 3) Shorts filter
-        if (data.isShort && chkHideShortsGlobal) return;
+        if (data.isShort && (chkHideShortsGlobal || hideShortsForFeed)) return;
 
         // 4) Video vs. other
         if (data.entryType !== "video") return;
@@ -1052,40 +1264,187 @@
     // PARSE FEEDS: fetch each feed; on each NEW video, append to UI
     async function parseFeeds() {
       addLog("Starting feed parsing phase...");
+      if (!feeds || feeds.length === 0) {
+        addLog("No feeds configured. Skipping parse.");
+        return;
+      }
+      addLog(`Found ${feeds.length} feeds to parse.`);
       const currentFeedSet = new Set();
 
-      for (const feedObj of feeds) {
+      // First process all YouTube feeds in parallel batches
+      const youtubeFeeds = feeds.filter(f => !f.url.includes("patreon.com"));
+      addLog(`Processing ${youtubeFeeds.length} YouTube feeds...`);
+      const batchSize = 5; // Reduced batch size to be gentler on the proxy
+      const youtubeBatches = [];
+      
+      for (let i = 0; i < youtubeFeeds.length; i += batchSize) {
+        youtubeBatches.push(youtubeFeeds.slice(i, i + batchSize));
+      }
+
+      // Process YouTube feeds efficiently
+      for (const feedBatch of youtubeBatches) {
+        addLog(`Processing batch of ${feedBatch.length} YouTube feeds...`);
+        await Promise.all(feedBatch.map(async (feedObj) => {
+          const feedUrl = feedObj.url;
+          if (!videoHistory[feedUrl]) {
+            videoHistory[feedUrl] = [];
+          }
+
+          try {
+            // Try allorigins first
+            let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
+            let response = await fetch(proxyUrl);
+            
+            // If allorigins fails, try codetabs
+            if (!response.ok) {
+              addLog(`AllOrigins failed for ${feedUrl}, trying CodeTabs...`);
+              proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
+              response = await fetch(proxyUrl);
+              if (!response.ok) {
+                throw new Error(`Both proxies failed for ${feedUrl}`);
+              }
+            }
+
+            let xmlText;
+            try {
+              const data = await response.json();
+              xmlText = data.contents;
+            } catch {
+              // If JSON parsing fails, assume direct XML response
+              xmlText = await response.text();
+            }
+
+            if (!xmlText || xmlText.trim() === '') {
+              throw new Error('Empty response from proxy');
+            }
+
+            const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+            if (xml.querySelector("parsererror")) {
+              throw new Error('XML parsing error');
+            }
+
+            let feedTitle = feedObj.name || feedUrl;
+            const titleEl = xml.querySelector("channel > title, entry > author > name");
+            if (titleEl) feedTitle = titleEl.textContent.trim();
+            feedObj.name = feedTitle;
+            
+            const entries = Array.from(xml.querySelectorAll("entry, item"));
+            addLog(`Found ${entries.length} entries in feed "${feedTitle}"`);
+            const newEntries = [];
+
+            for (const entry of entries) {
+              const title = entry.querySelector("title")?.textContent.trim() || "Untitled";
+              let link = "";
+              const linkEl = entry.querySelector("link");
+              if (linkEl) {
+                link = linkEl.getAttribute("href") || linkEl.textContent.trim();
+              }
+
+              let desc = "";
+              const descEl = entry.querySelector("media\\:group yt\\:description") ||
+                            entry.querySelector("content\\:encoded") ||
+                            entry.querySelector("description");
+              if (descEl) desc = descEl.textContent.trim();
+
+              const entryAuthorEl = entry.querySelector("author > name");
+              const entryAuthor = entryAuthorEl?.textContent.trim() || feedTitle;
+
+              let dateText = "";
+              const dateEl = entry.querySelector("published") ||
+                            entry.querySelector("pubDate") ||
+                            entry.querySelector("updated");
+              const publishedDate = dateEl ? new Date(dateEl.textContent) : new Date();
+
+              if (link.includes("youtube.com/watch?v=")) {
+                const videoId = new URL(link).searchParams.get("v");
+                currentFeedSet.add(videoId);
+
+                if (!videoHistory[feedUrl].includes(videoId)) {
+                  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                  const letterboxed = await isLetterboxedThumbnail(thumbnailUrl);
+                  const isShort = !letterboxed;
+
+                  newEntries.push({
+                    id: videoId,
+                    title,
+                    embedUrl: `https://www.youtube.com/embed/${videoId}`,
+                    link,
+                    desc,
+                    thumbnail: thumbnailUrl,
+                    date: publishedDate.toISOString(),
+                    feedName: feedTitle,
+                    authorName: entryAuthor,
+                    feedUrl,
+                    isShort,
+                    entryType: "video"
+                  });
+                }
+              }
+            }
+
+            if (newEntries.length > 0) {
+              addLog(`Adding ${newEntries.length} new entries from "${feedTitle}"`);
+              
+              // Sort new entries by date before adding
+              newEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+              
+              // Add to history and store
+              videoHistory[feedUrl].push(...newEntries.map(e => e.id));
+              
+              // Add each entry individually with a small delay for smooth animation
+              for (const entry of newEntries) {
+                videoStore[entry.id] = entry;
+                appendVideoCard(entry.id);
+                await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between entries
+              }
+              
+              saveAll();
+            }
+
+          } catch (err) {
+            addLog(`FETCH ERROR for ${feedUrl}: ${err}`);
+          }
+        }));
+      }
+
+      // Process Patreon feeds similarly with delays for smooth animation
+      const patreonFeeds = feeds.filter(f => f.url.includes("patreon.com"));
+      addLog(`Processing ${patreonFeeds.length} Patreon feeds...`);
+      
+      for (const feedObj of patreonFeeds) {
         const feedUrl = feedObj.url;
-        const hideShortsForThisFeed = feedObj.shortFilter;
         if (!videoHistory[feedUrl]) {
           videoHistory[feedUrl] = [];
         }
+
         let xml;
         try {
-          let proxyUrl;
-          if (feedUrl.includes("patreon.com/rss/")) {
-            proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
-            addLog(`Fetching Patreon feed via CodeTabs proxy: ${feedUrl}`);
-            const res = await fetch(proxyUrl);
-            const xmlText = await res.text();
-            xml = new DOMParser().parseFromString(xmlText, "application/xml");
-          } else {
-            proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
-            addLog(`Fetching feed via AllOrigins /get proxy: ${feedUrl}`);
-            const res = await fetch(proxyUrl);
-            const data = await res.json();
-            xml = new DOMParser().parseFromString(data.contents, "application/xml");
+          const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
+          addLog(`Fetching Patreon feed via CodeTabs proxy: ${feedUrl}`);
+          const res = await fetch(proxyUrl);
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          const xmlText = await res.text();
+          if (!xmlText || xmlText.trim() === '') {
+            throw new Error('Empty response from proxy');
+          }
+          xml = new DOMParser().parseFromString(xmlText, "application/xml");
+          if (xml.querySelector("parsererror")) {
+            throw new Error('XML parsing error');
           }
         } catch (err) {
           addLog(`FETCH ERROR for ${feedUrl}: ${err}`);
           continue;
         }
+
         let feedTitle = feedObj.name || feedUrl;
         const titleEl = xml.querySelector("channel > title, entry > author > name");
         if (titleEl) feedTitle = titleEl.textContent.trim();
         feedObj.name = feedTitle;
         addLog(`Parsing feed "${feedTitle}" (${feedUrl})`);
         const entries = xml.querySelectorAll("entry, item");
+        addLog(`Found ${entries.length} entries in Patreon feed "${feedTitle}"`);
 
         for (const entry of entries) {
           const title = entry.querySelector("title")?.textContent.trim() || "Untitled";
@@ -1110,151 +1469,133 @@
           else if (entry.querySelector("updated")) dateText = entry.querySelector("updated").textContent;
           const publishedDate = dateText ? new Date(dateText) : new Date();
 
-          let uniqueId, embedUrl = null, entryType = "video", isShort = false;
-          if (link.includes("youtube.com/watch?v=")) {
-            const videoId = new URL(link).searchParams.get("v");
-            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-            const letterboxed = await isLetterboxedThumbnail(thumbnailUrl);
-            isShort = !letterboxed;
-            uniqueId = videoId;
-            currentFeedSet.add(videoId);
+          const guidNode = entry.querySelector("guid");
+          const uniqueId = feedUrl + "|" + (guidNode?.textContent.trim() || Math.random().toString(36).substr(2, 9));
+          currentFeedSet.add(uniqueId);
 
-            if (!videoHistory[feedUrl].includes(videoId)) {
-              // It's truly new:
-              videoHistory[feedUrl].push(videoId);
-              addLog(`New YouTube video ID: ${videoId}`);
+          if (!videoHistory[feedUrl].includes(uniqueId)) {
+            videoHistory[feedUrl].push(uniqueId);
+            addLog(`New Patreon entry: ${title}`);
 
-              const dataObj = {
-                title,
-                embedUrl: `https://www.youtube.com/embed/${videoId}`,
-                link,
-                desc,
-                thumbnail: thumbnailUrl,
-                date: publishedDate.toISOString(),
-                feedName: feedTitle,
-                authorName: entryAuthor,
-                feedUrl,
-                isShort,
-                entryType: "video"
-              };
-              videoStore[videoId] = dataObj;
-              saveAll();
+            let thumbUrl = "";
+            let isAudio = false;
+            let entryType = "video"; // default to video unless proven otherwise
 
-              // Immediately append its card to the correct category:
-              appendVideoCard(videoId);
+            if (feedUrl.includes("patreon.com")) {
+              // Check for audio in title or description
+              const isAudioPost = /\[AUDIO\]|\(AUDIO\)|audio only|audio post/i.test(title) || 
+                                /\[AUDIO\]|\(AUDIO\)|audio only|audio post/i.test(desc);
+              
+              if (isAudioPost) {
+                entryType = "audio";
+                addLog(`Patreon post tagged as audio: ${title}`);
+              } else {
+                entryType = "video";
+                embedUrl = null; // will open externally
+                addLog(`Patreon post treated as video: ${title}`);
+              }
             } else {
-              // Already known—update metadata if changed
-              const existing = videoStore[videoId] || {};
-              videoStore[videoId] = {
-                ...existing,
-                title,
-                embedUrl: `https://www.youtube.com/embed/${videoId}`,
-                link,
-                desc,
-                thumbnail: thumbnailUrl,
-                date: publishedDate.toISOString(),
-                feedName: feedTitle,
-                authorName: entryAuthor,
-                feedUrl,
-                isShort,
-                entryType: "video"
-              };
-            }
-          } else {
-            // Non-YouTube entry (Patreon or generic RSS)
-            const guidNode = entry.querySelector("guid");
-            uniqueId = feedUrl + "|" + (guidNode?.textContent.trim() || Math.random().toString(36).substr(2, 9));
-            currentFeedSet.add(uniqueId);
-
-            if (!videoHistory[feedUrl].includes(uniqueId)) {
-              videoHistory[feedUrl].push(uniqueId);
-              addLog(`New generic entry ID: ${uniqueId} from ${feedUrl}`);
-
-              let thumbUrl = "";
-              let isAudio = false;
-              if (feedUrl.includes("patreon.com")) {
-                // Tag as "video" unless title has [AUDIO]
-                if (/\[AUDIO\]/i.test(title)) {
+              const enc = entry.querySelector("enclosure");
+              if (enc) {
+                const encType = enc.getAttribute("type") || "";
+                const encUrl = enc.getAttribute("url") || "";
+                if (encType.startsWith("audio")) {
                   entryType = "audio";
-                  isAudio = true;
-                  addLog(`Patreon audio post tagged as audio: ${uniqueId}`);
-                } else {
+                } else if (encType.startsWith("video")) {
                   entryType = "video";
-                  embedUrl = null; // will open externally
-                  addLog(`Patreon post treated as video (external link): ${uniqueId} → ${link}`);
-                }
-              } else {
-                const enc = entry.querySelector("enclosure");
-                if (enc) {
-                  const encType = enc.getAttribute("type") || "";
-                  const encUrl = enc.getAttribute("url") || "";
-                  if (encType.startsWith("audio")) {
-                    entryType = "audio";
-                    isAudio = true;
-                  } else if (encType.startsWith("video")) {
-                    entryType = "video";
-                    embedUrl = encUrl;
-                    addLog(`Detected generic video enclosure for ${uniqueId}: ${encUrl}`);
-                  }
+                  embedUrl = encUrl;
                 }
               }
-              const itunesImgNodes = entry.getElementsByTagNameNS(
-                "http://www.itunes.com/dtds/podcast-1.0.dtd", "image"
-              );
-              if (itunesImgNodes.length > 0) {
-                thumbUrl = itunesImgNodes[0].getAttribute("href") || "";
-                addLog(`Found <itunes:image> for ${uniqueId}: ${thumbUrl}`);
-              } else {
-                const mediaThumb = entry.querySelector("media\\:thumbnail");
-                if (mediaThumb) {
-                  thumbUrl = mediaThumb.getAttribute("url") || "";
-                  addLog(`Found <media:thumbnail> for ${uniqueId}: ${thumbUrl}`);
-                } else {
-                  addLog(`No thumbnail found for ${uniqueId}`);
-                }
-              }
-
-              const dataObj = {
-                title,
-                embedUrl,
-                link,
-                desc,
-                thumbnail: thumbUrl,
-                date: publishedDate.toISOString(),
-                feedName: feedTitle,
-                authorName: entryAuthor,
-                feedUrl,
-                isShort: false,
-                entryType
-              };
-              videoStore[uniqueId] = dataObj;
-              saveAll();
-
-              // Immediately append its card (respecting filters):
-              appendVideoCard(uniqueId);
-            } else {
-              // Already known—update metadata if needed
-              const existing = videoStore[uniqueId] || {};
-              videoStore[uniqueId] = {
-                ...existing,
-                title,
-                embedUrl: existing.embedUrl,
-                link,
-                desc,
-                thumbnail: existing.thumbnail,
-                date: publishedDate.toISOString(),
-                feedName: feedTitle,
-                authorName: entryAuthor,
-                feedUrl,
-                isShort: false,
-                entryType: existing.entryType || "video"
-              };
             }
+
+            // Look for thumbnail
+            const itunesImgNodes = entry.getElementsByTagNameNS(
+              "http://www.itunes.com/dtds/podcast-1.0.dtd", "image"
+            );
+            if (itunesImgNodes.length > 0) {
+              thumbUrl = itunesImgNodes[0].getAttribute("href") || "";
+            } else {
+              const mediaThumb = entry.querySelector("media\\:thumbnail");
+              if (mediaThumb) {
+                thumbUrl = mediaThumb.getAttribute("url") || "";
+              }
+            }
+
+            const dataObj = {
+              title,
+              embedUrl: null,
+              link,
+              desc,
+              thumbnail: thumbUrl,
+              date: publishedDate.toISOString(),
+              feedName: feedTitle,
+              authorName: entryAuthor,
+              feedUrl,
+              isShort: false,
+              entryType
+            };
+            videoStore[uniqueId] = dataObj;
+            saveAll();
+
+            appendVideoCard(uniqueId);
+            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between entries
           }
         }
       }
 
       addLog("Finished parsing all feeds.");
+      // After parsing, fetch thumbnails for any Patreon entries that need them
+      fetchPatreonThumbnails();
+    }
+
+    // Add this function after parseFeeds but before appendVideoCard
+    async function fetchPatreonThumbnails() {
+      const entries = Object.entries(videoStore).filter(([id, data]) => 
+        data.feedUrl.includes("patreon.com") && !data.thumbnail
+      );
+
+      if (entries.length === 0) return;
+      addLog(`Fetching thumbnails for ${entries.length} Patreon entries`);
+
+      const batchSize = 5;
+      for (let i = 0; i < entries.length; i += batchSize) {
+        const batch = entries.slice(i, i + batchSize);
+        await Promise.all(batch.map(async ([id, data]) => {
+          try {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(data.link)}`;
+            const res = await fetch(proxyUrl);
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            
+            // Look for og:image or twitter:image meta tags
+            const ogImage = doc.querySelector('meta[property="og:image"]');
+            const twitterImage = doc.querySelector('meta[name="twitter:image"]');
+            const thumbnail = ogImage?.getAttribute('content') || twitterImage?.getAttribute('content');
+            
+            if (thumbnail) {
+              videoStore[id].thumbnail = thumbnail;
+              // Update the thumbnail in the UI
+              const cards = document.querySelectorAll(`.entry-card img[src=""]`);
+              cards.forEach(img => {
+                const card = img.closest('.entry-card');
+                const title = card?.querySelector('p')?.getAttribute('title');
+                if (title === data.title) {
+                  img.src = thumbnail;
+                }
+              });
+              addLog(`Found thumbnail for Patreon post: ${data.title}`);
+            }
+          } catch (err) {
+            addLog(`Failed to fetch Patreon thumbnail for ${data.title}: ${err}`);
+          }
+        }));
+        
+        // Save after each batch
+        saveAll();
+        
+        // Small delay between batches to be nice to servers
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
 
     // Append a single new video card to whichever category it belongs to,
@@ -1267,7 +1608,13 @@
       const chkPatreon = document.getElementById("filterPatreon").checked;
       const chkHideAudio = document.getElementById("filterAudio").checked;
       const chkHideShortsGlobal = document.getElementById("filterShort").checked;
-      const hideShortsForFeed = feeds.find(f => f.url === data.feedUrl)?.shortFilter;
+      const selectedFolder = document.getElementById("folderFilter").value;
+      const feed = feeds.find(f => f.url === data.feedUrl);
+      const hideShortsForFeed = feed?.shortFilter;
+      const feedFolder = feed?.folder || "";
+
+      // Folder filter
+      if (selectedFolder !== "ALL" && feedFolder !== selectedFolder) return;
 
       // 1) Source filter
       if (isYouTube && !chkYouTube) return;
@@ -1282,11 +1629,24 @@
       // 4) Must be a "video" entry
       if (data.entryType !== "video") return;
 
-      // Determine category: new vs old vs watched
-      const watchedSet = new Set(watchedVideos);
+      // Create the card
+      const div = document.createElement("div");
+      const isWatched = watchedVideos.includes(videoId);
+      div.className = `entry-card${isWatched ? " watching" : ""} new-insert`;
+      div.innerHTML = `
+        <div class="channel-label">${data.authorName}</div>
+        <div class="thumbnail-wrapper">
+          <img src="${data.thumbnail || ''}" alt="Thumbnail" />
+        </div>
+        <p title="${data.title}">${data.title}</p>
+      `;
+      div.onclick = () => expandVideoByID(videoId);
+      div.dataset.date = new Date(data.date).getTime();
+
+      // Find the correct category block
       const inCurrentFeed = videoHistory[data.feedUrl]?.includes(videoId);
       let categoryClass;
-      if (watchedSet.has(videoId)) {
+      if (isWatched) {
         categoryClass = "watched-cat";
       } else if (inCurrentFeed) {
         categoryClass = "new-cat";
@@ -1296,26 +1656,46 @@
 
       // Find or create the category-block
       let block = document.querySelector(`.category-block.${categoryClass}`);
-      let grid, header;
+      let grid;
       if (!block) {
-        // Create a new category-block if it doesn't exist yet
         const container = document.getElementById("feedsContainer");
-        const newBlock = document.createElement("div");
-        newBlock.className = `category-block ${categoryClass}`;
-        newBlock.dataset.category = categoryClass;
+        block = document.createElement("div");
+        block.className = `category-block ${categoryClass}`;
+        block.dataset.category = categoryClass;
         const titleText = categoryClass === "new-cat"
           ? "New (Unwatched)"
           : categoryClass === "old-cat"
             ? "Old Unwatched"
             : "Watched";
-        newBlock.innerHTML = `<h2>${titleText} (1)</h2><div class="entry-grid"></div>`;
-        container.appendChild(newBlock);
-        grid = newBlock.querySelector(".entry-grid");
-        header = newBlock.querySelector("h2");
+        block.innerHTML = `<h2>${titleText} (1)</h2><div class="entry-grid"></div>`;
+        
+        // Insert block in correct order (New -> Unwatched -> Watched)
+        const order = ["new-cat", "old-cat", "watched-cat"];
+        const index = order.indexOf(categoryClass);
+        let inserted = false;
+        
+        for (let i = 0; i < order.length; i++) {
+          if (i === index) {
+            container.appendChild(block);
+            inserted = true;
+            break;
+          }
+          const existing = document.querySelector(`.category-block.${order[i]}`);
+          if (!existing && i > index) {
+            container.appendChild(block);
+            inserted = true;
+            break;
+          }
+        }
+        
+        if (!inserted) {
+          container.appendChild(block);
+        }
+        
+        grid = block.querySelector(".entry-grid");
       } else {
         grid = block.querySelector(".entry-grid");
-        header = block.querySelector("h2");
-        // Increment the count in header: extract number from "(N)" and +1
+        const header = block.querySelector("h2");
         const match = header.textContent.match(/\((\d+)\)$/);
         let count = match ? parseInt(match[1], 10) : 0;
         count += 1;
@@ -1323,30 +1703,54 @@
         header.textContent = `${titleText} (${count})`;
       }
 
-      // Create the card
-      const div = document.createElement("div");
-      const isWatched = watchedSet.has(videoId);
-      div.className = "entry-card" + (isWatched ? " watching" : "");
-      div.innerHTML = `
-        <div class="channel-label">${data.authorName}</div>
-        <div class="thumbnail-wrapper">
-          <img src="${data.thumbnail}" alt="Thumbnail" />
-        </div>
-        <p title="${data.title}">${data.title}</p>
-      `;
-      div.onclick = () => expandVideoByID(videoId);
-      grid.insertBefore(div, grid.firstChild);
-      addLog(`Appended new card for video ${videoId} to "${categoryClass}".`);
+      // Find the correct position to insert the card based on date
+      const existingCards = Array.from(grid.children);
+      const insertIndex = existingCards.findIndex(card => {
+        const cardDate = parseInt(card.dataset.date || "0");
+        return new Date(data.date).getTime() > cardDate;
+      });
+
+      // Insert the card with animation
+      if (insertIndex === -1) {
+        grid.appendChild(div);
+      } else {
+        grid.insertBefore(div, existingCards[insertIndex]);
+      }
+
+      // Trigger animation if in view
+      requestAnimationFrame(() => {
+        const rect = div.getBoundingClientRect();
+        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+        if (isInView) {
+          div.classList.add('new-insert');
+          div.addEventListener('animationend', () => {
+            div.classList.remove('new-insert');
+          }, { once: true });
+        }
+      });
+
+      // Update category visibility based on current filter
+      applyCategoryFilter();
     }
 
     // Expand video overlay and play
     function expandVideoByID(videoId) {
+      const data = videoStore[videoId];
+      
+      // Mark as watched regardless of type
       if (!watchedVideos.includes(videoId)) {
         watchedVideos.push(videoId);
         saveAll();
         addLog(`Marked as watched: ${videoId}`);
       }
-      // Rebuild queue, find index, play
+
+      // For Patreon, open in new tab instead of player
+      if (data.feedUrl.includes("patreon.com")) {
+        window.open(data.link, '_blank');
+        return;
+      }
+
+      // For YouTube and others, continue with player
       buildQueueFromQueueState();
       currentVideoIndex = videoQueue.findIndex((v) => v.id === videoId);
       playCurrent();
@@ -1360,12 +1764,20 @@
       const chkPatreon = document.getElementById("filterPatreon").checked;
       const chkHideAudio = document.getElementById("filterAudio").checked;
       const chkHideShortsGlobal = document.getElementById("filterShort").checked;
+      const selectedFolder = document.getElementById("folderFilter").value;
 
       allIDs.forEach((vid) => {
         const data = videoStore[vid];
         const isYouTube = data.feedUrl.includes("youtube.com");
         const isPatreon = data.feedUrl.includes("patreon.com");
         const hideShortsForFeed = feeds.find(f => f.url === data.feedUrl)?.shortFilter;
+        const feedFolder = feeds.find(f => f.url === data.feedUrl)?.folder || "";
+
+        // Skip if folder doesn't match (unless ALL is selected)
+        if (selectedFolder !== "ALL" && feedFolder !== selectedFolder) return;
+
+        // Skip Patreon content in video player queue
+        if (isPatreon) return;
 
         // 1) Source filter
         if (isYouTube && !chkYouTube) return;
@@ -1534,7 +1946,8 @@
     }
 
     function overlayClick(e) {
-      if (e.target === e.currentTarget) {
+      // Only close if clicking directly on the overlay background
+      if (e.target.classList.contains('player-overlay')) {
         closeOverlay();
       }
     }
@@ -1695,25 +2108,255 @@
       localStorage.setItem("twitchChannels", JSON.stringify(twitchChannels));
     }
 
-    function addTwitchChannel() {
-      const input = document.getElementById("twitchChannelInput");
-      const name = input.value.trim().toLowerCase();
-      if (!name) return;
-      if (twitchChannels.some((c) => c.name === name)) {
-        alert("Channel already in queue.");
+    function moveChannel(fromIdx, toIdx) {
+      // Swap channels
+      const temp = twitchChannels[fromIdx];
+      twitchChannels[fromIdx] = twitchChannels[toIdx];
+      twitchChannels[toIdx] = temp;
+
+      // Update priorities
+      twitchChannels.forEach((channel, idx) => {
+        channel.priority = idx + 1;
+      });
+
+      // Save and refresh all UI elements
+      saveTwitch();
+      renderTwitchSortList();
+      renderTwitchList();
+      updateLiveBar();
+      updateOverlayLiveIcons();
+    }
+
+    function updateChannelIcons(channelName, avatar, isLive) {
+      addLog(`Updating icons for ${channelName}: avatar=${avatar ? 'yes' : 'no'}, live=${isLive}`);
+      
+      // Update in main list
+      const mainIcon = document.querySelector(`#twitchList .twitch-icon-item[data-channel="${channelName}"] img`);
+      if (mainIcon && avatar) {
+        addLog(`Updating main list icon for ${channelName}`);
+        mainIcon.src = avatar;
+      } else if (!mainIcon) {
+        addLog(`Could not find main list icon element for ${channelName}`);
+      }
+      
+      // Update in sort list
+      const sortIcon = document.querySelector(`#twitchSortList .twitch-icon-item[data-channel="${channelName}"] img`);
+      if (sortIcon && avatar) {
+        addLog(`Updating sort list icon for ${channelName}`);
+        sortIcon.src = avatar;
+      } else if (!sortIcon) {
+        addLog(`Could not find sort list icon element for ${channelName}`);
+      }
+
+      // Update live status
+      const icons = document.querySelectorAll(`.twitch-icon-item[data-channel="${channelName}"]`);
+      if (icons.length > 0) {
+        addLog(`Found ${icons.length} icon elements to update live status for ${channelName}`);
+        icons.forEach(icon => {
+          if (isLive) {
+            icon.classList.add('live');
+          } else {
+            icon.classList.remove('live');
+          }
+        });
+      } else {
+        addLog(`No icon elements found for ${channelName}`);
+      }
+    }
+
+    async function renderTwitchListWithAnimation(newChannel = null) {
+      const list = document.getElementById("twitchList");
+      
+      // Sort by priority
+      twitchChannels.sort((a, b) => a.priority - b.priority);
+
+      // If adding a new channel, just append it with animation
+      if (newChannel) {
+        const wrapper = createTwitchIconElement(newChannel, twitchChannels.length - 1);
+        // Add new-insert class after a brief delay to ensure proper animation
+        requestAnimationFrame(() => {
+          wrapper.classList.add('new-insert');
+        });
+        list.appendChild(wrapper);
         return;
       }
-      const maxPrio = twitchChannels.reduce((max, c) => Math.max(max, c.priority), 0);
-      twitchChannels.push({ name, priority: maxPrio + 1, live: false, avatar: null });
-      saveTwitch();
-      input.value = "";
-      renderTwitchList();
+
+      // Otherwise, render the full list
+      list.innerHTML = "";
+      for (const [idx, channel] of twitchChannels.entries()) {
+        const wrapper = createTwitchIconElement(channel, idx);
+        list.appendChild(wrapper);
+      }
     }
+
+    // Update the initialization code to ensure the list is rendered on page load
+    // Add this right before the startTwitchPolling() call
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTwitchList();
+      startTwitchPolling();
+    });
+
+    // Remove the old startTwitchPolling() call and replace with this
+    function initializeTwitch() {
+      // Render the initial list first
+      renderTwitchList();
+      startTwitchPolling();
+    }
+
+    // Update the INITIALIZE section
+    // INITIALIZE
+    document.getElementById("twitchControls").addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") addTwitchChannel();
+    });
+    initializeTwitch();
+
+    async function addTwitchChannel() {
+      const input = document.getElementById("twitchChannelInput");
+      const rawInput = input.value.trim().toLowerCase();
+      if (!rawInput) return;
+
+      // Split by commas and clean each name
+      const channelNames = rawInput.split(',').map(name => name.trim()).filter(name => name);
+      
+      // Add each channel
+      for (const name of channelNames) {
+        if (twitchChannels.some((c) => c.name === name)) {
+          addLog(`Skipped duplicate channel: ${name}`);
+          continue;
+        }
+
+        const maxPrio = twitchChannels.reduce((max, c) => Math.max(max, c.priority), 0);
+        // Add channel immediately with default icon
+        const channel = { 
+          name, 
+          priority: maxPrio + 1, 
+          live: false, 
+          avatar: null,
+          needsIconRefresh: true, // Flag for channels that need icon refresh
+          iconRetryCount: 0 // Track number of retry attempts
+        };
+        twitchChannels.push(channel);
+        
+        // Save and render immediately with default icon
+        saveTwitch();
+        await renderTwitchListWithAnimation(channel);
+        
+        // Then try to get the channel status and avatar
+        try {
+          const { live, avatar } = await checkTwitchTracker(name);
+          const index = twitchChannels.findIndex(c => c.name === name);
+          if (index !== -1) {
+            twitchChannels[index].live = live;
+            if (avatar) {
+              twitchChannels[index].avatar = avatar;
+              twitchChannels[index].needsIconRefresh = false;
+              twitchChannels[index].iconRetryCount = 0;
+            } else {
+              // If no avatar found, increment retry count
+              twitchChannels[index].iconRetryCount++;
+              addLog(`No avatar found for ${name}, retry count: ${twitchChannels[index].iconRetryCount}`);
+            }
+            addLog(`Updated Twitch channel: ${name} (live: ${live}, avatar: ${avatar ? 'found' : 'not found'})`);
+            // Re-render just this channel's icons with the new avatar
+            updateChannelIcons(name, avatar, live);
+          }
+        } catch (err) {
+          addLog(`Error fetching status for ${name}: ${err}`);
+          const index = twitchChannels.findIndex(c => c.name === name);
+          if (index !== -1) {
+            twitchChannels[index].iconRetryCount++;
+            addLog(`Failed to fetch status for ${name}, retry count: ${twitchChannels[index].iconRetryCount}`);
+          }
+        }
+      }
+
+      input.value = "";
+      updateLiveBar();
+      updateOverlayLiveIcons();
+    }
+
+    function createTwitchIconElement(channel, idx) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "twitch-icon-wrapper";
+
+      // Channel icon
+      const iconDiv = document.createElement("div");
+      iconDiv.className = "twitch-icon-item" + (channel.live ? " live" : "");
+      iconDiv.draggable = true;
+      iconDiv.dataset.index = idx;
+      iconDiv.dataset.channel = channel.name;
+      
+      const img = document.createElement("img");
+      img.src = channel.avatar || 
+        `https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.name}-profile_image-70x70.png`;
+      img.alt = channel.name;
+      img.title = channel.name;
+      
+      iconDiv.appendChild(img);
+      wrapper.appendChild(iconDiv);
+
+      // Drag and drop handlers
+      iconDiv.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', idx.toString());
+        iconDiv.classList.add('dragging');
+      });
+
+      iconDiv.addEventListener('dragend', (e) => {
+        iconDiv.classList.remove('dragging');
+        document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+        updateLiveBar();
+        updateOverlayLiveIcons();
+      });
+
+      iconDiv.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (!iconDiv.classList.contains('dragging')) {
+          iconDiv.classList.add('drop-target');
+        }
+      });
+
+      iconDiv.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      iconDiv.addEventListener('dragleave', (e) => {
+        iconDiv.classList.remove('drop-target');
+      });
+
+      iconDiv.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+        const toIdx = parseInt(iconDiv.dataset.index);
+        
+        if (fromIdx !== toIdx) {
+          moveChannel(fromIdx, toIdx);
+        }
+        
+        iconDiv.classList.remove('drop-target');
+      });
+
+      // Click handler for playing channel
+      iconDiv.addEventListener('click', () => {
+        openTwitchOverlay(channel.name);
+      });
+
+      return wrapper;
+    }
+
+    // Add keypress handler for Twitch channel input
+    document.getElementById("twitchChannelInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addTwitchChannel();
+      }
+    });
 
     function removeTwitchChannel(idx) {
       twitchChannels.splice(idx, 1);
       saveTwitch();
-      renderTwitchList();
+      renderTwitchListWithAnimation();
+      renderTwitchSortList();
+      updateLiveBar();
     }
 
     function normalizePriorities() {
@@ -1725,9 +2368,18 @@
     async function checkTwitchTracker(channel) {
       // Fetch via AllOrigins to avoid CORS
       try {
+        addLog(`Fetching status for ${channel} via TwitchTracker...`);
         const proxyUrl = `https://api.allorigins.win/raw?url=https://twitchtracker.com/${channel}`;
         const res = await fetch(proxyUrl);
+        if (!res.ok) {
+          addLog(`HTTP error ${res.status} for ${channel}`);
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const html = await res.text();
+        if (!html || html.trim() === '') {
+          addLog(`Empty response for ${channel}`);
+          throw new Error('Empty response from proxy');
+        }
         const doc = new DOMParser().parseFromString(html, "text/html");
 
         // 1) "LIVE" check
@@ -1737,10 +2389,11 @@
         // 2) Avatar check (profile image in #app-logo img)
         const logoImg = doc.querySelector("#app-logo img");
         const avatarUrl = logoImg ? logoImg.src : null;
-
+        
+        addLog(`Status check for ${channel}: live=${isLive}, avatar=${avatarUrl ? 'found' : 'not found'}`);
         return { live: isLive, avatar: avatarUrl };
       } catch (err) {
-        console.warn(`TwitchTracker fetch error for ${channel}:`, err);
+        addLog(`TwitchTracker error for ${channel}: ${err.message}`);
         return { live: false, avatar: null };
       }
     }
@@ -1752,26 +2405,58 @@
         updateLiveBar();
         return;
       }
+
+      addLog(`Checking status for ${twitchChannels.length} channels...`);
+
+      // Sort channels by priority before checking status
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
       const statuses = await Promise.all(
-        twitchChannels.map((c) => checkTwitchTracker(c.name))
+        sortedChannels.map((c) => checkTwitchTracker(c.name))
       );
-      // Merge statuses back into channels
+
+      // Merge statuses back into channels while maintaining priority order
+      let updatedCount = 0;
       statuses.forEach((st, i) => {
-        twitchChannels[i].live = st.live;
-        if (st.avatar) twitchChannels[i].avatar = st.avatar;
+        const channel = sortedChannels[i];
+        const originalIndex = twitchChannels.findIndex(c => c.name === channel.name);
+        if (originalIndex !== -1) {
+          const needsUpdate = twitchChannels[originalIndex].needsIconRefresh || 
+                            twitchChannels[originalIndex].live !== st.live ||
+                            (!twitchChannels[originalIndex].avatar && st.avatar);
+          
+          if (needsUpdate) {
+            addLog(`Updating channel ${channel.name}: live=${st.live}, avatar=${st.avatar ? 'yes' : 'no'}`);
+            twitchChannels[originalIndex].live = st.live;
+            if (st.avatar) {
+              twitchChannels[originalIndex].avatar = st.avatar;
+              twitchChannels[originalIndex].needsIconRefresh = false;
+            }
+            updateChannelIcons(channel.name, st.avatar, st.live);
+            updatedCount++;
+          }
+        }
       });
+
+      addLog(`Updated ${updatedCount} channels with new information`);
+      saveTwitch();
       updateLiveBar();
 
-      // Filter only live channels, sort by priority
-      const liveList = twitchChannels
-        .filter((c) => c.live)
-        .sort((a, b) => a.priority - b.priority);
+      // Filter only live channels, maintaining priority order
+      const liveList = sortedChannels.filter((c) => {
+        const originalChannel = twitchChannels.find(tc => tc.name === c.name);
+        return originalChannel && originalChannel.live;
+      });
+
+      addLog(`Found ${liveList.length} live channels`);
+
       if (!liveList.length) {
         document.getElementById("twitchPlayerContainer").innerHTML = "";
         document.getElementById("twitchStatus").textContent = "No one is live right now.";
         return;
       }
-      const topLive = liveList[0].name; // highest-priority
+
+      const topLive = liveList[0].name; // highest-priority live channel
       if (currentTwitchChannel === topLive) {
         document.getElementById("twitchStatus").textContent = `Watching ${topLive}`;
         return;
@@ -1781,7 +2466,6 @@
     }
 
     function playTwitchChannel(channel) {
-      // GitHub Pages is whitelisted, so use window.location.hostname
       const parentDomain = window.location.hostname;
       const embedUrl =
         `https://player.twitch.tv/` +
@@ -1815,138 +2499,306 @@
     function renderTwitchList() {
       const list = document.getElementById("twitchList");
       list.innerHTML = "";
-      // Sort by priority:
+
+      // Sort by priority
       twitchChannels.sort((a, b) => a.priority - b.priority);
 
-      twitchChannels.forEach((c, idx) => {
-        const item = document.createElement("div");
-        item.className = "twitch-icon-item";
-        if (c.live) {
-          item.classList.add('live');
-        }
-        item.setAttribute("data-index", idx);
+      twitchChannels.forEach((channel, idx) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "twitch-icon-wrapper";
 
-        // Avatar image:
+        // Channel icon
+        const iconDiv = document.createElement("div");
+        iconDiv.className = "twitch-icon-item" + (channel.live ? " live" : "");
+        iconDiv.draggable = true;
+        iconDiv.dataset.index = idx;
+        
         const img = document.createElement("img");
-        img.src = c.avatar ||
-          `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
-        img.alt = c.name;
-        item.appendChild(img);
+        img.src = channel.avatar || 
+          `https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.name}-profile_image-70x70.png`;
+        img.alt = channel.name;
+        img.title = channel.name;
+        
+        iconDiv.appendChild(img);
+        wrapper.appendChild(iconDiv);
 
-        // CLICK: open channel if not dragging
-        item.addEventListener("click", (e) => {
-          if (!isDragging) {
-            playTwitchChannel(c.name);
+        // Drag and drop handlers
+        iconDiv.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', idx.toString());
+          iconDiv.classList.add('dragging');
+        });
+
+        iconDiv.addEventListener('dragend', (e) => {
+          iconDiv.classList.remove('dragging');
+          // Remove any lingering drop target indicators
+          document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+          // Update live bars after drag ends
+          updateLiveBar();
+          updateOverlayLiveIcons();
+        });
+
+        iconDiv.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (!iconDiv.classList.contains('dragging')) {
+            iconDiv.classList.add('drop-target');
           }
         });
 
-        // MOUSE-DOWN: start a drag
-        item.addEventListener("mousedown", (e) => onDragStart(e, idx));
+        iconDiv.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
 
-        list.appendChild(item);
+        iconDiv.addEventListener('dragleave', (e) => {
+          iconDiv.classList.remove('drop-target');
+        });
+
+        iconDiv.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+          const toIdx = parseInt(iconDiv.dataset.index);
+          
+          if (fromIdx !== toIdx) {
+            moveChannel(fromIdx, toIdx);
+          }
+          
+          iconDiv.classList.remove('drop-target');
+        });
+
+        // Click handler for playing channel
+        iconDiv.addEventListener('click', () => {
+          openTwitchOverlay(channel.name);
+        });
+
+        list.appendChild(wrapper);
       });
     }
 
-    let dragInfo = null;
-    function onDragStart(e, sourceIdx) {
-      e.preventDefault();
-      isDragging = true;
-
-      const original = e.currentTarget;
-      const rect = original.getBoundingClientRect();
-
-      // Clone it:
-      const clone = original.cloneNode(true);
-      clone.style.position = "absolute";
-      clone.style.left = rect.left + "px";
-      clone.style.top = rect.top + "px";
-      clone.style.width = rect.width + "px";
-      clone.style.height = rect.height + "px";
-      clone.style.pointerEvents = "none";
-      clone.style.zIndex = 20000;
-      clone.classList.add("drag-active");
-      document.body.appendChild(clone);
-
-      dragInfo = {
-        sourceIdx,
-        cloneElem: clone,
-        offsetX: e.clientX - rect.left,
-        offsetY: e.clientY - rect.top
-      };
-
-      document.addEventListener("mousemove", onDragging);
-      document.addEventListener("mouseup", onDrop);
-    }
-
-    function onDragging(e) {
-      if (!dragInfo) return;
-      dragInfo.cloneElem.style.left = e.clientX - dragInfo.offsetX + "px";
-      dragInfo.cloneElem.style.top = e.clientY - dragInfo.offsetY + "px";
-
-      // Highlight potential drop target
-      document.querySelectorAll(".twitch-icon-item").forEach((el) => {
-        el.classList.remove("drag-over");
+    // Function to update the folder filter dropdown
+    function updateFolderFilter() {
+      const select = document.getElementById("folderFilter");
+      const currentValue = select.value || "ALL"; // Store current selection
+      select.innerHTML = '<option value="ALL">All Folders</option>';
+      folders.forEach((folder) => {
+        const opt = document.createElement("option");
+        opt.value = folder;
+        opt.textContent = folder;
+        select.appendChild(opt);
       });
-      const under = document.elementFromPoint(e.clientX, e.clientY);
-      if (under) {
-        const target = under.closest(".twitch-icon-item");
-        if (target && target.getAttribute("data-index") !== null) {
-          target.classList.add("drag-over");
-        }
-      }
+      select.value = currentValue; // Restore selection
     }
 
-    function onDrop(e) {
-      if (!dragInfo) return;
-      document.removeEventListener("mousemove", onDragging);
-      document.removeEventListener("mouseup", onDrop);
+    // Move the event listener outside of initialRender to prevent duplicates
+    document.getElementById("folderFilter").addEventListener("change", () => {
+      addLog(`Changed folder filter to: ${document.getElementById("folderFilter").value}`);
+      buildQueueFromStore();
+      const container = document.getElementById("feedsContainer");
+      container.innerHTML = "";
+      const watchedSet = new Set(watchedVideos);
 
-      // Determine drop target
-      const under = document.elementFromPoint(e.clientX, e.clientY);
-      let targetIdx = null;
-      if (under) {
-        const target = under.closest(".twitch-icon-item");
-        if (target && target.getAttribute("data-index") !== null) {
-          targetIdx = parseInt(target.getAttribute("data-index"), 10);
-          target.classList.remove("drag-over");
+      // Partition into categories:
+      const newUnwatched = [];
+      const oldUnwatched = [];
+      const watchedList = [];
+      const currentIDsSet = new Set();
+      Object.entries(videoHistory).forEach(([feedUrl, arr]) => {
+        arr.forEach((vid) => currentIDsSet.add(vid));
+      });
+      videoQueue.forEach((entry) => {
+        const vid = entry.id;
+        const inCurrent = currentIDsSet.has(vid);
+        const isWatched = watchedSet.has(vid);
+        if (isWatched) {
+          watchedList.push(vid);
+        } else if (inCurrent) {
+          newUnwatched.push(vid);
+        } else {
+          oldUnwatched.push(vid);
         }
+      });
+
+      function sortByDateDesc(arr) {
+        return arr.sort((a, b) => {
+          const da = new Date(videoStore[a].date);
+          const db = new Date(videoStore[b].date);
+          return db - da;
+        });
       }
+      sortByDateDesc(newUnwatched);
+      sortByDateDesc(oldUnwatched);
+      sortByDateDesc(watchedList);
 
-      // Remove the clone
-      document.body.removeChild(dragInfo.cloneElem);
-      dragInfo.cloneElem = null;
+      const categories = [
+        { key: "New", title: `New (Unwatched) (${newUnwatched.length})`, ids: newUnwatched, css: "new-cat" },
+        { key: "Unwatched", title: `Old Unwatched (${oldUnwatched.length})`, ids: oldUnwatched, css: "old-cat" },
+        { key: "Watched", title: `Watched (${watchedList.length})`, ids: watchedList, css: "watched-cat" }
+      ];
 
-      const sourceIdx = dragInfo.sourceIdx;
-      dragInfo = null;
+      categories.forEach(({ title, ids, css }) => {
+        const block = document.createElement("div");
+        block.className = `category-block ${css}`;
+        block.dataset.category = css;
+        block.innerHTML = `<h2>${title}</h2><div class="entry-grid"></div>`;
+        container.appendChild(block);
+        const grid = block.querySelector(".entry-grid");
 
-      // If a valid drop index and it's different, reorder:
-      if (targetIdx !== null && targetIdx !== sourceIdx) {
-        const [moved] = twitchChannels.splice(sourceIdx, 1);
-        twitchChannels.splice(targetIdx, 0, moved);
-        normalizePriorities();
-        saveTwitch(); // Save changes to localStorage
-      }
+        ids.forEach((vid) => {
+          const data = videoStore[vid];
+          const isWatched = watchedSet.has(vid);
+          const div = document.createElement("div");
+          div.className = "entry-card" + (isWatched ? " watching" : "");
+          div.innerHTML = `
+            <div class="channel-label">${data.authorName}</div>
+            <div class="thumbnail-wrapper">
+              <img src="${data.thumbnail}" alt="Thumbnail" />
+            </div>
+            <p title="${data.title}">${data.title}</p>
+          `;
+          div.onclick = () => expandVideoByID(vid);
+          grid.appendChild(div);
+        });
+      });
 
-      renderTwitchList();
-      // Wait a brief moment before re-enabling clicks
-      setTimeout(() => {
-        isDragging = false;
-      }, 50);
-    }
-
-    // INITIALIZE
-    document.getElementById("twitchControls").addEventListener("click", (e) => {
-      if (e.target.tagName === "BUTTON") addTwitchChannel();
+      applyCategoryFilter();
     });
-    renderTwitchList();
-    startTwitchPolling();
 
-    /**************************************
-     *  BASIC LOGGING
-     **************************************/
-    // Set version indicator
-    document.title = `Custom RSS ${APP_VERSION}`;
-    document.getElementById('version-indicator').textContent = APP_VERSION;
+    function openTwitchOverlay(channel) {
+      // Close YouTube viewer if it's open
+      closeOverlay();
+      
+      document.body.classList.add("no-scroll");
+      document.getElementById("twitchOverlay").classList.add("show");
+      
+      // Update channel title
+      document.getElementById("twitchChannelTitle").textContent = channel;
+      
+      // Create Twitch player
+      const parentDomain = window.location.hostname;
+      const playerEmbed = `https://player.twitch.tv/?channel=${channel}&parent=${parentDomain}&autoplay=true`;
+      const chatEmbed = `https://www.twitch.tv/embed/${channel}/chat?parent=${parentDomain}&darkpopout`;
+      
+      document.getElementById("twitchPlayerWrapper").innerHTML = `
+        <iframe
+          src="${playerEmbed}"
+          allowfullscreen="true"
+          scrolling="no"
+          height="100%"
+          width="100%">
+        </iframe>
+      `;
+      
+      document.getElementById("twitchChatContainer").innerHTML = `
+        <iframe
+          src="${chatEmbed}"
+          height="100%"
+          width="100%">
+        </iframe>
+      `;
+
+      // Update all UI elements
+      renderTwitchSortList();
+      renderTwitchList();
+      updateLiveBar();
+    }
+
+    function closeTwitchOverlay() {
+      document.getElementById("twitchOverlay").classList.remove("show");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("twitchPlayerWrapper").innerHTML = "";
+      document.getElementById("twitchChatContainer").innerHTML = "";
+    }
+
+    function renderTwitchSortList() {
+      const list = document.getElementById("twitchSortList");
+      list.innerHTML = "";
+      
+      // Sort channels by priority
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      sortedChannels.forEach((channel, idx) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "twitch-icon-wrapper";
+        
+        const iconDiv = document.createElement("div");
+        iconDiv.className = "twitch-icon-item" + (channel.live ? " live" : "");
+        iconDiv.draggable = true;
+        iconDiv.dataset.index = idx;
+        
+        const img = document.createElement("img");
+        img.src = channel.avatar || 
+          `https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.name}-profile_image-70x70.png`;
+        img.alt = channel.name;
+        img.title = channel.name;
+        
+        iconDiv.appendChild(img);
+        wrapper.appendChild(iconDiv);
+        
+        // Drag and drop handlers
+        iconDiv.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', idx.toString());
+          iconDiv.classList.add('dragging');
+        });
+        
+        iconDiv.addEventListener('dragend', (e) => {
+          iconDiv.classList.remove('dragging');
+          document.querySelectorAll('.drop-target').forEach(el => 
+            el.classList.remove('drop-target')
+          );
+        });
+        
+        iconDiv.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (!iconDiv.classList.contains('dragging')) {
+            iconDiv.classList.add('drop-target');
+          }
+        });
+        
+        iconDiv.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        
+        iconDiv.addEventListener('dragleave', (e) => {
+          iconDiv.classList.remove('drop-target');
+        });
+        
+        iconDiv.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+          const toIdx = parseInt(iconDiv.dataset.index);
+          
+          if (fromIdx !== toIdx) {
+            moveChannel(fromIdx, toIdx);
+          }
+          
+          iconDiv.classList.remove('drop-target');
+        });
+        
+        // Click handler
+        iconDiv.addEventListener('click', () => {
+          openTwitchOverlay(channel.name);
+        });
+        
+        list.appendChild(wrapper);
+      });
+    }
+
+    // Keep the existing moveChannel function as is since it works
+    function moveChannel(fromIdx, toIdx) {
+      // Swap channels
+      const temp = twitchChannels[fromIdx];
+      twitchChannels[fromIdx] = twitchChannels[toIdx];
+      twitchChannels[toIdx] = temp;
+
+      // Update priorities
+      twitchChannels.forEach((channel, idx) => {
+        channel.priority = idx + 1;
+      });
+
+      // Save and refresh both lists
+      saveTwitch();
+      renderTwitchSortList();
+      renderTwitchList();
+    }
   </script>
 </body>
+</html>
 </html>
