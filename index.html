@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom RSS & Twitch v0.46</title>
+  <title>Custom RSS</title>
   <style>
     /* ── COLOR VARIABLES FOR PURPLE GRADIENT THEME ── */
     :root {
@@ -55,6 +55,11 @@
       width: 32px; height: 32px; border-radius: 50%;
       object-fit: cover; border: 1px solid var(--text-primary);
       cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+    #liveBar img.live {
+      border: 2px solid #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
     }
 
     /* ── HEADER BAR ── */
@@ -186,7 +191,7 @@
       margin-right: 0.5rem; cursor: pointer;
     }
 
-    /* ── Tabs’ content containers ── */
+    /* ── Tabs' content containers ── */
     .tab-content {
       display: none;
       padding-top: 1rem;
@@ -338,7 +343,7 @@
       display: flex; flex-direction: column; gap: 0.75rem;
       height: 100%;
       overflow-y: auto;
-      padding-right: 0.5rem; /* ensure scrollbar doesn’t overlap */
+      padding-right: 0.5rem; /* ensure scrollbar doesn't overlap */
     }
     .video-right::-webkit-scrollbar { width: 6px; }
     .video-right::-webkit-scrollbar-thumb {
@@ -378,7 +383,7 @@
       opacity: 0.6; pointer-events: none;
     }
 
-    /* ── TOAST NOTIFICATION (for “Patreon skipped”) ── */
+    /* ── TOAST NOTIFICATION (for "Patreon skipped") ── */
     #toast {
       position: fixed; top: 1rem; right: 1rem;
       background: var(--toast-bg); color: var(--toast-text);
@@ -459,7 +464,7 @@
       background: var(--bg-button-hover);
     }
 
-    /* Draggable circle icons (with drag‐over highlight) */
+    /* Draggable circle icons (with drag-over highlight) */
     #twitchList {
       display: flex;
       gap: 0.5rem;
@@ -476,8 +481,12 @@
       border-radius: 50%;
       overflow: hidden;
       border: 2px solid var(--text-primary);
-      transition: transform 0.15s ease, outline 0.15s ease;
+      transition: transform 0.15s ease, outline 0.15s ease, border-color 0.2s ease;
       position: relative;
+    }
+    .twitch-icon-item.live {
+      border-color: #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
     }
     .twitch-icon-item.drag-active {
       opacity: 0.6;
@@ -508,12 +517,27 @@
     #twitchStatus {
       margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);
     }
+
+    #version-indicator {
+      position: fixed;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0, 0, 0, 0.5);
+      color: var(--text-secondary);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      z-index: 1000;
+    }
   </style>
 
   <!-- ── YouTube IFrame API ── -->
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+  <!-- ── VERSION INDICATOR ── -->
+  <div id="version-indicator"></div>
+
   <!-- ── LIVE BAR ── -->
   <div id="liveBar">
     <!-- Twitch avatars will appear here when live -->
@@ -593,7 +617,7 @@
     <div id="twitchStatus"></div>
   </div>
 
-  <!-- ── TOAST (for “Patreon skipped”) ── -->
+  <!-- ── TOAST (for "Patreon skipped") ── -->
   <div id="toast"></div>
 
   <!-- ── PLAYER OVERLAY (RSS) ── -->
@@ -643,6 +667,14 @@
   </div>
 
   <script>
+    /**************************************
+     *  GLOBAL CONFIG
+     **************************************/
+    const APP_VERSION = 'v0.58';
+    // Set version indicator
+    document.title = `Custom RSS ${APP_VERSION}`;
+    document.getElementById('version-indicator').textContent = APP_VERSION;
+
     /**************************************
      *  BASIC LOGGING
      **************************************/
@@ -697,7 +729,7 @@
     }
 
     /**************************************
-     *  UI: Main‐Tab Switching
+     *  UI: Main-Tab Switching
      **************************************/
     const btnRSS = document.getElementById("tabRSS");
     const btnTwitch = document.getElementById("tabTwitch");
@@ -730,6 +762,7 @@
           const icon = document.createElement("img");
           icon.src = avatarUrl;
           icon.title = c.name;
+          icon.classList.add('live');
           icon.onclick = () => {
             btnTwitch.click();
             currentTwitchChannel = c.name;
@@ -760,7 +793,7 @@
       }
     }
 
-    // Update live bar and overlay‐live icons every 30s
+    // Update live bar and overlay-live icons every 30s
     setInterval(() => {
       updateLiveBar();
       updateOverlayLiveIcons();
@@ -769,7 +802,7 @@
     updateOverlayLiveIcons();
 
     /**************************************
-     *  RSS FEEDS CODE (v0.38)
+     *  RSS FEEDS CODE (v0.37)
      **************************************/
     function clearAllCache() {
       if (!confirm("Clear ALL data including feeds?")) return;
@@ -1087,7 +1120,7 @@
             currentFeedSet.add(videoId);
 
             if (!videoHistory[feedUrl].includes(videoId)) {
-              // It’s truly new:
+              // It's truly new:
               videoHistory[feedUrl].push(videoId);
               addLog(`New YouTube video ID: ${videoId}`);
 
@@ -1246,7 +1279,7 @@
       // 3) Shorts filter
       if (data.isShort && (chkHideShortsGlobal || hideShortsForFeed)) return;
 
-      // 4) Must be a “video” entry
+      // 4) Must be a "video" entry
       if (data.entryType !== "video") return;
 
       // Determine category: new vs old vs watched
@@ -1265,7 +1298,7 @@
       let block = document.querySelector(`.category-block.${categoryClass}`);
       let grid, header;
       if (!block) {
-        // Create a new category-block if it doesn’t exist yet
+        // Create a new category-block if it doesn't exist yet
         const container = document.getElementById("feedsContainer");
         const newBlock = document.createElement("div");
         newBlock.className = `category-block ${categoryClass}`;
@@ -1282,7 +1315,7 @@
       } else {
         grid = block.querySelector(".entry-grid");
         header = block.querySelector("h2");
-        // Increment the count in header: extract number from “(N)” and +1
+        // Increment the count in header: extract number from "(N)" and +1
         const match = header.textContent.match(/\((\d+)\)$/);
         let count = match ? parseInt(match[1], 10) : 0;
         count += 1;
@@ -1319,7 +1352,7 @@
       playCurrent();
     }
 
-    // Build videoQueue from current filters and store (for overlay’s “Up Next”)
+    // Build videoQueue from current filters and store (for overlay's "Up Next")
     function buildQueueFromQueueState() {
       videoQueue = [];
       const allIDs = Object.keys(videoStore);
@@ -1344,7 +1377,7 @@
         // 3) Shorts filter
         if (data.isShort && (chkHideShortsGlobal || hideShortsForFeed)) return;
 
-        // 4) Must be a “video” entry
+        // 4) Must be a "video" entry
         if (data.entryType !== "video") return;
 
         videoQueue.push({
@@ -1594,7 +1627,7 @@
       document.getElementById("btnNew").classList.toggle("active", category === "New");
       document.getElementById("btnOld").classList.toggle("active", category === "Unwatched");
       document.getElementById("btnWatched").classList.toggle("active", category === "Watched");
-      // Re‐filter displayed blocks
+      // Re-filter displayed blocks
       applyCategoryFilter();
       addLog(`Switched category filter to "${category}".`);
     }
@@ -1648,11 +1681,11 @@
     initialRender();
     // Then parse feeds to discover any new items:
     parseFeeds();
-    // Re‐parse every 5 minutes:
+    // Re-parse every 5 minutes:
     setInterval(parseFeeds, 5 * 60 * 1000);
 
     /**************************************
-     *  TWITCH QUEUE CODE (v0.38)
+     *  TWITCH QUEUE CODE (updated)
      **************************************/
     let twitchInterval = null;
     let currentTwitchChannel = null;
@@ -1697,7 +1730,7 @@
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
 
-        // 1) “LIVE” check
+        // 1) "LIVE" check
         const badge = doc.querySelector(".live-indicator");
         const isLive = !!badge;
 
@@ -1738,7 +1771,7 @@
         document.getElementById("twitchStatus").textContent = "No one is live right now.";
         return;
       }
-      const topLive = liveList[0].name; // highest‐priority
+      const topLive = liveList[0].name; // highest-priority
       if (currentTwitchChannel === topLive) {
         document.getElementById("twitchStatus").textContent = `Watching ${topLive}`;
         return;
@@ -1777,7 +1810,7 @@
     }
 
     /**************************************
-     *  RENDER + DRAG‐N‐DROP LOGIC
+     *  RENDER + DRAG-N-DROP LOGIC
      **************************************/
     function renderTwitchList() {
       const list = document.getElementById("twitchList");
@@ -1788,6 +1821,9 @@
       twitchChannels.forEach((c, idx) => {
         const item = document.createElement("div");
         item.className = "twitch-icon-item";
+        if (c.live) {
+          item.classList.add('live');
+        }
         item.setAttribute("data-index", idx);
 
         // Avatar image:
@@ -1804,7 +1840,7 @@
           }
         });
 
-        // MOUSE‐DOWN: start a drag
+        // MOUSE-DOWN: start a drag
         item.addEventListener("mousedown", (e) => onDragStart(e, idx));
 
         list.appendChild(item);
@@ -1883,15 +1919,16 @@
       const sourceIdx = dragInfo.sourceIdx;
       dragInfo = null;
 
-      // If a valid drop index and it’s different, reorder:
+      // If a valid drop index and it's different, reorder:
       if (targetIdx !== null && targetIdx !== sourceIdx) {
         const [moved] = twitchChannels.splice(sourceIdx, 1);
         twitchChannels.splice(targetIdx, 0, moved);
         normalizePriorities();
+        saveTwitch(); // Save changes to localStorage
       }
 
       renderTwitchList();
-      // Wait a brief moment before re‐enabling clicks
+      // Wait a brief moment before re-enabling clicks
       setTimeout(() => {
         isDragging = false;
       }, 50);
@@ -1903,6 +1940,13 @@
     });
     renderTwitchList();
     startTwitchPolling();
+
+    /**************************************
+     *  BASIC LOGGING
+     **************************************/
+    // Set version indicator
+    document.title = `Custom RSS ${APP_VERSION}`;
+    document.getElementById('version-indicator').textContent = APP_VERSION;
   </script>
 </body>
 </html>
