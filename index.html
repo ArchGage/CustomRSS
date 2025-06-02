@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom RSS & Twitch v0.41</title>
+  <title>Custom RSS & Twitch v0.42</title>
   <style>
     /* ── COLOR VARIABLES FOR PURPLE GRADIENT THEME ── */
     :root {
@@ -478,29 +478,35 @@
     #twitchControls button:hover {
       background: var(--bg-button-hover);
     }
+
+    /* ── TWITCH QUEUE: Draggable Icon List ── */
     #twitchList {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
       margin-top: 1rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
     }
-    .twitch-item {
-      background: var(--bg-card); padding: 0.5rem; border-radius: 8px;
-      display: flex; align-items: center; justify-content: space-between;
+    .twitch-icon-item {
+      cursor: grab;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--text-primary);
     }
-    .twitch-item span {
-      color: var(--text-primary);
+    .twitch-icon-item.drag-over {
+      outline: 2px dashed var(--text-accent);
     }
-    .twitch-item input[type="number"] {
-      width: 4rem; padding: 0.25rem; background: #222; color: var(--text-primary);
-      border: none; border-radius: 4px; margin-right: 0.5rem;
-      text-align: center;
+    .twitch-icon-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
-    .twitch-item button {
-      background: #cc3333; color: #fff; border: none; border-radius: 4px;
-      padding: 0.3rem 0.6rem; cursor: pointer; transition: background 0.2s ease;
-    }
-    .twitch-item button:hover {
-      background: #aa1111;
-    }
+
     #twitchPlayerContainer {
       margin-top: 1.5rem;
       width: 100%; max-width: 800px; aspect-ratio: 16/9;
@@ -561,7 +567,7 @@
 
   <!-- ── HEADER with Version, Main Tabs, Filters & Refresh ── -->
   <div class="header">
-    <div class="version-label">v0.41</div>
+    <div class="version-label">v0.42</div>
     <button class="burger-button" onclick="toggleSideMenu()">☰</button>
     <div class="main-tabs">
       <button id="tabRSS" class="active">RSS Feeds</button>
@@ -596,7 +602,7 @@
       <button onclick="addTwitchChannel()">+ Add Channel</button>
     </div>
     <div id="twitchList">
-      <!-- Each .twitch-item will be inserted here -->
+      <!-- Draggable avatar icons will be inserted here -->
     </div>
     <div id="twitchPlayerContainer">
       <!-- The Twitch embed iframe will go here -->
@@ -780,7 +786,7 @@
     updateOverlayLiveIcons();
 
     /**************************************
-     *  RSS FEEDS CODE (v0.41)
+     *  RSS FEEDS CODE (v0.42)
      **************************************/
     function clearAllCache() {
       if (!confirm("Clear ALL data including feeds?")) return;
@@ -1712,7 +1718,7 @@
     setInterval(parseFeeds, 5 * 60 * 1000);
 
     /**************************************
-     *  TWITCH QUEUE CODE (v0.41)
+     *  TWITCH QUEUE CODE (v0.42)
      **************************************/
     let twitchInterval = null;
     let currentTwitchChannel = null;
@@ -1745,20 +1751,60 @@
       renderTwitchList();
     }
 
+    // New: Recompute priorities after reorder
+    function normalizePriorities() {
+      twitchChannels.sort((a, b) => a.priority - b.priority);
+      twitchChannels.forEach((c, i) => c.priority = i + 1);
+      saveAll();
+    }
+
+    // Render a row of draggable avatar icons
     function renderTwitchList() {
       const list = document.getElementById("twitchList");
       list.innerHTML = "";
+      // Sort by priority before rendering
       twitchChannels.sort((a, b) => a.priority - b.priority);
+
       twitchChannels.forEach((c, idx) => {
         const item = document.createElement("div");
-        item.className = "twitch-item";
-        item.innerHTML = `
-          <div>
-            <input type="number" value="${c.priority}" min="1" onchange="changeTwitchPriority(${idx}, parseInt(this.value))" />
-            <span>${c.name}</span>
-          </div>
-          <button onclick="removeTwitchChannel(${idx})">Delete</button>
-        `;
+        item.className = "twitch-icon-item";
+        item.setAttribute("draggable", "true");
+        item.setAttribute("data-index", idx);
+
+        // If avatar already known, use it; otherwise fallback to a generic URL
+        const img = document.createElement("img");
+        img.src = c.avatar ||
+          `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
+        img.alt = c.name;
+        item.appendChild(img);
+
+        // Drag and Drop handlers
+        item.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", idx.toString());
+        });
+        item.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          item.classList.add("drag-over");
+        });
+        item.addEventListener("dragleave", () => {
+          item.classList.remove("drag-over");
+        });
+        item.addEventListener("drop", (e) => {
+          e.preventDefault();
+          item.classList.remove("drag-over");
+          const sourceIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+          const targetIdx = parseInt(item.getAttribute("data-index"), 10);
+          if (sourceIdx === targetIdx) return;
+
+          // Reorder twitchChannels: remove source, insert at target
+          const [moved] = twitchChannels.splice(sourceIdx, 1);
+          twitchChannels.splice(targetIdx, 0, moved);
+          normalizePriorities();
+
+          // Re-render in new order
+          renderTwitchList();
+        });
+
         list.appendChild(item);
       });
     }
@@ -1825,11 +1871,26 @@
     }
 
     function playTwitchChannel(channel) {
-      const embedUrl = `https://player.twitch.tv/?channel=${channel}&parent=${window.location.hostname}&autoplay=true`;
+      // Since GitHub Pages is whitelisted, use dynamic hostname:
+      const parentDomain = window.location.hostname || "localhost";
+      const embedUrl =
+        `https://player.twitch.tv/` +
+        `?channel=${encodeURIComponent(channel)}` +
+        `&parent=${parentDomain}` +
+        `&autoplay=true`;
+
       const container = document.getElementById("twitchPlayerContainer");
-      container.innerHTML = `<iframe src="${embedUrl}" allowfullscreen="true" scrolling="no"></iframe>`;
+      container.innerHTML = `
+        <iframe
+          src="${embedUrl}"
+          allowfullscreen="true"
+          scrolling="no"
+          height="100%"
+          width="100%">
+        </iframe>
+      `;
       document.getElementById("twitchStatus").textContent = `Now watching: ${channel}`;
-      addLog(`Switched to live Twitch channel: ${channel}`);
+      addLog(`Switched to live Twitch channel: ${channel} (parent=${parentDomain})`);
     }
 
     function startTwitchPolling() {
