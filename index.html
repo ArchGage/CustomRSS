@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom RSS & Twitch v0.37</title>
+  <title>Custom RSS & Twitch v0.46</title>
   <style>
     /* ── COLOR VARIABLES FOR PURPLE GRADIENT THEME ── */
     :root {
@@ -479,12 +479,12 @@
       transition: transform 0.15s ease, outline 0.15s ease;
       position: relative;
     }
-    .twitch-icon-item.drag‐active {
+    .twitch-icon-item.drag-active {
       opacity: 0.6;
       transform: scale(1.1);
       cursor: grabbing;
     }
-    .twitch-icon-item.drag‐over {
+    .twitch-icon-item.drag-over {
       outline: 2px dashed var(--text-accent);
     }
     .twitch-icon-item img {
@@ -769,7 +769,7 @@
     updateOverlayLiveIcons();
 
     /**************************************
-     *  RSS FEEDS CODE (v0.37)
+     *  RSS FEEDS CODE (v0.38)
      **************************************/
     function clearAllCache() {
       if (!confirm("Clear ALL data including feeds?")) return;
@@ -1652,7 +1652,7 @@
     setInterval(parseFeeds, 5 * 60 * 1000);
 
     /**************************************
-     *  TWITCH QUEUE CODE (updated)
+     *  TWITCH QUEUE CODE (v0.38)
      **************************************/
     let twitchInterval = null;
     let currentTwitchChannel = null;
@@ -1828,7 +1828,7 @@
       clone.style.height = rect.height + "px";
       clone.style.pointerEvents = "none";
       clone.style.zIndex = 20000;
-      clone.classList.add("drag‐active");
+      clone.classList.add("drag-active");
       document.body.appendChild(clone);
 
       dragInfo = {
@@ -1849,13 +1849,13 @@
 
       // Highlight potential drop target
       document.querySelectorAll(".twitch-icon-item").forEach((el) => {
-        el.classList.remove("drag‐over");
+        el.classList.remove("drag-over");
       });
       const under = document.elementFromPoint(e.clientX, e.clientY);
       if (under) {
         const target = under.closest(".twitch-icon-item");
         if (target && target.getAttribute("data-index") !== null) {
-          target.classList.add("drag‐over");
+          target.classList.add("drag-over");
         }
       }
     }
@@ -1872,7 +1872,7 @@
         const target = under.closest(".twitch-icon-item");
         if (target && target.getAttribute("data-index") !== null) {
           targetIdx = parseInt(target.getAttribute("data-index"), 10);
-          target.classList.remove("drag‐over");
+          target.classList.remove("drag-over");
         }
       }
 
