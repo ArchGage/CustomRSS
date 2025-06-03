@@ -626,37 +626,175 @@
       background: rgba(200, 200, 200, 0.3);
       border-radius: 3px;
     }
-    .twitch-sort-list .twitch-icon-wrapper {
-      position: relative;
-    }
-    .twitch-sort-list .twitch-icon-item {
-      width: 50px;
-      height: 50px;
-      position: relative;
+    .twitch-sort-tile {
+      background: #2f2f2f;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
       cursor: grab;
+      user-select: none;
+      color: #fff;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+      margin-bottom: 0.5rem;
     }
-    .twitch-sort-list .twitch-icon-item.dragging {
+    .twitch-sort-tile.live {
+      border-color: #ff0000;
+      background: #3f2f2f;
+    }
+    .twitch-sort-tile.dragging {
       cursor: grabbing;
       opacity: 0.5;
     }
-    .twitch-sort-list .twitch-icon-item img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 2px solid var(--text-primary);
-      transition: border-color 0.2s ease, transform 0.2s ease;
-      object-fit: cover;
-      pointer-events: none;
-    }
-    .twitch-sort-list .twitch-icon-item.live img {
-      border-color: #ff0000;
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
-    }
-    .twitch-sort-list .twitch-icon-item.drop-target img {
-      transform: scale(1.1);
+    .twitch-sort-tile.drop-target {
+      transform: scale(1.05);
       border-color: var(--text-accent);
       box-shadow: 0 0 15px var(--text-accent);
     }
+
+    function renderTwitchSortList() {
+      const list = document.getElementById("twitchSortList");
+      list.innerHTML = "";
+      
+      // Sort channels by priority
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      sortedChannels.forEach((channel, idx) => {
+        const tile = document.createElement("div");
+        tile.className = "twitch-sort-tile" + (channel.live ? " live" : "");
+        tile.draggable = true;
+        tile.dataset.index = idx;
+        tile.dataset.channel = channel.name;
+        tile.textContent = channel.name;
+        
+        // Drag and drop handlers
+        tile.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', idx.toString());
+          tile.classList.add('dragging');
+        });
+        
+        tile.addEventListener('dragend', (e) => {
+          tile.classList.remove('dragging');
+          document.querySelectorAll('.drop-target').forEach(el => 
+            el.classList.remove('drop-target')
+          );
+        });
+        
+        tile.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (!tile.classList.contains('dragging')) {
+            tile.classList.add('drop-target');
+          }
+        });
+        
+        tile.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        
+        tile.addEventListener('dragleave', (e) => {
+          tile.classList.remove('drop-target');
+        });
+        
+        tile.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+          const toIdx = parseInt(tile.dataset.index);
+          
+          if (fromIdx !== toIdx) {
+            moveChannel(fromIdx, toIdx);
+          }
+          
+          tile.classList.remove('drop-target');
+        });
+        
+        // Click handler
+        tile.addEventListener('click', () => {
+          openTwitchOverlay(channel.name);
+        });
+        
+        list.appendChild(tile);
+      });
+    }
+
+    function updateLiveBar() {
+      const bar = document.getElementById("liveBar");
+      bar.innerHTML = "";
+
+      // Sort channels by priority first
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      // Then display only live ones in that order
+      for (const c of sortedChannels) {
+        if (c.live) {
+          const avatarUrl = c.avatar ||
+            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-300x300.jpg`;
+          const icon = document.createElement("img");
+          icon.src = avatarUrl;
+          icon.title = c.name;
+          icon.classList.add('live');
+          icon.onclick = () => {
+            openTwitchOverlay(c.name);
+          };
+          // Handle image load error
+          icon.onerror = () => {
+            // Create a canvas with the first letter of the channel name
+            const canvas = document.createElement('canvas');
+            canvas.width = 50;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#6441a5'; // Twitch purple
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.name[0].toUpperCase(), 25, 25);
+            icon.src = canvas.toDataURL();
+          };
+          bar.appendChild(icon);
+        }
+      }
+    }
+
+    function updateOverlayLiveIcons() {
+      const container = document.getElementById("overlayLiveIcons");
+      container.innerHTML = "";
+
+      // Sort channels by priority first
+      const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
+      
+      // Then display only live ones in that order
+      for (const c of sortedChannels) {
+        if (c.live) {
+          const avatarUrl = c.avatar ||
+            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-300x300.jpg`;
+          const icon = document.createElement("img");
+          icon.src = avatarUrl;
+          icon.title = c.name;
+          icon.onclick = () => {
+            openTwitchOverlay(c.name);
+          };
+          // Handle image load error
+          icon.onerror = () => {
+            // Create a canvas with the first letter of the channel name
+            const canvas = document.createElement('canvas');
+            canvas.width = 50;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#6441a5'; // Twitch purple
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.name[0].toUpperCase(), 25, 25);
+            icon.src = canvas.toDataURL();
+          };
+          container.appendChild(icon);
+        }
+      }
+    }
+
     .twitch-chat-container {
       width: 100%;
       height: 100%;
@@ -672,8 +810,8 @@
 
     /* Add pop-in animation for Twitch icons */
     .twitch-icon-wrapper {
-      opacity: 1; /* Changed from 0 to ensure visibility by default */
-      transform: none; /* Remove default transform */
+      opacity: 1;
+      transform: none;
     }
     .twitch-icon-wrapper.new-insert {
       animation: popIn 0.3s ease-out forwards;
@@ -861,7 +999,7 @@
     /**************************************
      *  GLOBAL CONFIG
      **************************************/
-    const APP_VERSION = 'v0.79';
+    const APP_VERSION = 'v0.80';
     // Set version indicator
     document.title = `Custom RSS ${APP_VERSION}`;
     document.getElementById('version-indicator').textContent = APP_VERSION;
@@ -954,13 +1092,29 @@
       for (const c of sortedChannels) {
         if (c.live) {
           const avatarUrl = c.avatar ||
-            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
+            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-300x300.jpg`;
           const icon = document.createElement("img");
           icon.src = avatarUrl;
           icon.title = c.name;
           icon.classList.add('live');
           icon.onclick = () => {
             openTwitchOverlay(c.name);
+          };
+          // Handle image load error
+          icon.onerror = () => {
+            // Create a canvas with the first letter of the channel name
+            const canvas = document.createElement('canvas');
+            canvas.width = 50;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#6441a5'; // Twitch purple
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.name[0].toUpperCase(), 25, 25);
+            icon.src = canvas.toDataURL();
           };
           bar.appendChild(icon);
         }
@@ -978,12 +1132,28 @@
       for (const c of sortedChannels) {
         if (c.live) {
           const avatarUrl = c.avatar ||
-            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-70x70.png`;
+            `https://static-cdn.jtvnw.net/jtv_user_pictures/${c.name}-profile_image-300x300.jpg`;
           const icon = document.createElement("img");
           icon.src = avatarUrl;
           icon.title = c.name;
           icon.onclick = () => {
             openTwitchOverlay(c.name);
+          };
+          // Handle image load error
+          icon.onerror = () => {
+            // Create a canvas with the first letter of the channel name
+            const canvas = document.createElement('canvas');
+            canvas.width = 50;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#6441a5'; // Twitch purple
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.name[0].toUpperCase(), 25, 25);
+            icon.src = canvas.toDataURL();
           };
           container.appendChild(icon);
         }
@@ -1285,10 +1455,10 @@
       for (const feedBatch of youtubeBatches) {
         addLog(`Processing batch of ${feedBatch.length} YouTube feeds...`);
         await Promise.all(feedBatch.map(async (feedObj) => {
-          const feedUrl = feedObj.url;
-          if (!videoHistory[feedUrl]) {
-            videoHistory[feedUrl] = [];
-          }
+        const feedUrl = feedObj.url;
+        if (!videoHistory[feedUrl]) {
+          videoHistory[feedUrl] = [];
+        }
 
           try {
             // Try allorigins first
@@ -1298,7 +1468,7 @@
             // If allorigins fails, try codetabs
             if (!response.ok) {
               addLog(`AllOrigins failed for ${feedUrl}, trying CodeTabs...`);
-              proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
+            proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
               response = await fetch(proxyUrl);
               if (!response.ok) {
                 throw new Error(`Both proxies failed for ${feedUrl}`);
@@ -1420,16 +1590,16 @@
         let xml;
         try {
           const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
-          addLog(`Fetching Patreon feed via CodeTabs proxy: ${feedUrl}`);
-          const res = await fetch(proxyUrl);
+            addLog(`Fetching Patreon feed via CodeTabs proxy: ${feedUrl}`);
+            const res = await fetch(proxyUrl);
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
           }
-          const xmlText = await res.text();
+            const xmlText = await res.text();
           if (!xmlText || xmlText.trim() === '') {
             throw new Error('Empty response from proxy');
           }
-          xml = new DOMParser().parseFromString(xmlText, "application/xml");
+            xml = new DOMParser().parseFromString(xmlText, "application/xml");
           if (xml.querySelector("parsererror")) {
             throw new Error('XML parsing error');
           }
@@ -1469,75 +1639,75 @@
           else if (entry.querySelector("updated")) dateText = entry.querySelector("updated").textContent;
           const publishedDate = dateText ? new Date(dateText) : new Date();
 
-          const guidNode = entry.querySelector("guid");
+            const guidNode = entry.querySelector("guid");
           const uniqueId = feedUrl + "|" + (guidNode?.textContent.trim() || Math.random().toString(36).substr(2, 9));
-          currentFeedSet.add(uniqueId);
+            currentFeedSet.add(uniqueId);
 
-          if (!videoHistory[feedUrl].includes(uniqueId)) {
-            videoHistory[feedUrl].push(uniqueId);
+            if (!videoHistory[feedUrl].includes(uniqueId)) {
+              videoHistory[feedUrl].push(uniqueId);
             addLog(`New Patreon entry: ${title}`);
 
-            let thumbUrl = "";
-            let isAudio = false;
+              let thumbUrl = "";
+              let isAudio = false;
             let entryType = "video"; // default to video unless proven otherwise
 
-            if (feedUrl.includes("patreon.com")) {
+              if (feedUrl.includes("patreon.com")) {
               // Check for audio in title or description
               const isAudioPost = /\[AUDIO\]|\(AUDIO\)|audio only|audio post/i.test(title) || 
                                 /\[AUDIO\]|\(AUDIO\)|audio only|audio post/i.test(desc);
               
               if (isAudioPost) {
-                entryType = "audio";
-                addLog(`Patreon post tagged as audio: ${title}`);
-              } else {
-                entryType = "video";
-                embedUrl = null; // will open externally
-                addLog(`Patreon post treated as video: ${title}`);
-              }
-            } else {
-              const enc = entry.querySelector("enclosure");
-              if (enc) {
-                const encType = enc.getAttribute("type") || "";
-                const encUrl = enc.getAttribute("url") || "";
-                if (encType.startsWith("audio")) {
                   entryType = "audio";
-                } else if (encType.startsWith("video")) {
+                addLog(`Patreon post tagged as audio: ${title}`);
+                } else {
                   entryType = "video";
-                  embedUrl = encUrl;
+                  embedUrl = null; // will open externally
+                addLog(`Patreon post treated as video: ${title}`);
+                }
+              } else {
+                const enc = entry.querySelector("enclosure");
+                if (enc) {
+                  const encType = enc.getAttribute("type") || "";
+                  const encUrl = enc.getAttribute("url") || "";
+                  if (encType.startsWith("audio")) {
+                    entryType = "audio";
+                  } else if (encType.startsWith("video")) {
+                    entryType = "video";
+                    embedUrl = encUrl;
+                  }
                 }
               }
-            }
 
             // Look for thumbnail
-            const itunesImgNodes = entry.getElementsByTagNameNS(
-              "http://www.itunes.com/dtds/podcast-1.0.dtd", "image"
-            );
-            if (itunesImgNodes.length > 0) {
-              thumbUrl = itunesImgNodes[0].getAttribute("href") || "";
-            } else {
-              const mediaThumb = entry.querySelector("media\\:thumbnail");
-              if (mediaThumb) {
-                thumbUrl = mediaThumb.getAttribute("url") || "";
+              const itunesImgNodes = entry.getElementsByTagNameNS(
+                "http://www.itunes.com/dtds/podcast-1.0.dtd", "image"
+              );
+              if (itunesImgNodes.length > 0) {
+                thumbUrl = itunesImgNodes[0].getAttribute("href") || "";
+              } else {
+                const mediaThumb = entry.querySelector("media\\:thumbnail");
+                if (mediaThumb) {
+                  thumbUrl = mediaThumb.getAttribute("url") || "";
+                }
               }
-            }
 
-            const dataObj = {
-              title,
+              const dataObj = {
+                title,
               embedUrl: null,
-              link,
-              desc,
-              thumbnail: thumbUrl,
-              date: publishedDate.toISOString(),
-              feedName: feedTitle,
-              authorName: entryAuthor,
-              feedUrl,
-              isShort: false,
-              entryType
-            };
-            videoStore[uniqueId] = dataObj;
-            saveAll();
+                link,
+                desc,
+                thumbnail: thumbUrl,
+                date: publishedDate.toISOString(),
+                feedName: feedTitle,
+                authorName: entryAuthor,
+                feedUrl,
+                isShort: false,
+                entryType
+              };
+              videoStore[uniqueId] = dataObj;
+              saveAll();
 
-            appendVideoCard(uniqueId);
+              appendVideoCard(uniqueId);
             await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between entries
           }
         }
@@ -2220,12 +2390,12 @@
       
       // Add each channel
       for (const name of channelNames) {
-        if (twitchChannels.some((c) => c.name === name)) {
+      if (twitchChannels.some((c) => c.name === name)) {
           addLog(`Skipped duplicate channel: ${name}`);
           continue;
-        }
+      }
 
-        const maxPrio = twitchChannels.reduce((max, c) => Math.max(max, c.priority), 0);
+      const maxPrio = twitchChannels.reduce((max, c) => Math.max(max, c.priority), 0);
         // Add channel immediately with default icon
         const channel = { 
           name, 
@@ -2238,7 +2408,7 @@
         twitchChannels.push(channel);
         
         // Save and render immediately with default icon
-        saveTwitch();
+      saveTwitch();
         await renderTwitchListWithAnimation(channel);
         
         // Then try to get the channel status and avatar
@@ -2389,7 +2559,7 @@
         // 2) Avatar check (profile image in #app-logo img)
         const logoImg = doc.querySelector("#app-logo img");
         const avatarUrl = logoImg ? logoImg.src : null;
-        
+
         addLog(`Status check for ${channel}: live=${isLive}, avatar=${avatarUrl ? 'found' : 'not found'}`);
         return { live: isLive, avatar: avatarUrl };
       } catch (err) {
@@ -2417,6 +2587,7 @@
 
       // Merge statuses back into channels while maintaining priority order
       let updatedCount = 0;
+      let statusChanged = false;
       statuses.forEach((st, i) => {
         const channel = sortedChannels[i];
         const originalIndex = twitchChannels.findIndex(c => c.name === channel.name);
@@ -2426,11 +2597,22 @@
                             (!twitchChannels[originalIndex].avatar && st.avatar);
           
           if (needsUpdate) {
+            if (twitchChannels[originalIndex].live !== st.live) {
+              statusChanged = true;
+            }
             addLog(`Updating channel ${channel.name}: live=${st.live}, avatar=${st.avatar ? 'yes' : 'no'}`);
             twitchChannels[originalIndex].live = st.live;
             if (st.avatar) {
               twitchChannels[originalIndex].avatar = st.avatar;
               twitchChannels[originalIndex].needsIconRefresh = false;
+              twitchChannels[originalIndex].iconRetryCount = 0;
+            } else if (twitchChannels[originalIndex].needsIconRefresh) {
+              twitchChannels[originalIndex].iconRetryCount++;
+              addLog(`No avatar found for ${channel.name}, retry count: ${twitchChannels[originalIndex].iconRetryCount}`);
+              if (twitchChannels[originalIndex].iconRetryCount >= 3) {
+                twitchChannels[originalIndex].needsIconRefresh = false;
+                addLog(`Max retries reached for ${channel.name}, stopping icon refresh attempts`);
+              }
             }
             updateChannelIcons(channel.name, st.avatar, st.live);
             updatedCount++;
@@ -2453,16 +2635,21 @@
       if (!liveList.length) {
         document.getElementById("twitchPlayerContainer").innerHTML = "";
         document.getElementById("twitchStatus").textContent = "No one is live right now.";
+        currentTwitchChannel = null;
         return;
       }
 
       const topLive = liveList[0].name; // highest-priority live channel
-      if (currentTwitchChannel === topLive) {
-        document.getElementById("twitchStatus").textContent = `Watching ${topLive}`;
-        return;
-      }
+      // Switch to top priority live channel if:
+      // 1. Current channel went offline, or
+      // 2. A higher priority channel went live, or
+      // 3. No channel is currently playing
+      if (statusChanged || !currentTwitchChannel || currentTwitchChannel !== topLive) {
       currentTwitchChannel = topLive;
       playTwitchChannel(topLive);
+      } else {
+        document.getElementById("twitchStatus").textContent = `Watching ${topLive}`;
+      }
     }
 
     function playTwitchChannel(channel) {
@@ -2484,6 +2671,7 @@
         </iframe>
       `;
       document.getElementById("twitchStatus").textContent = `Now watching: ${channel}`;
+      currentTwitchChannel = channel;
       addLog(`Switched to live Twitch channel: ${channel}`);
     }
 
@@ -2504,72 +2692,59 @@
       twitchChannels.sort((a, b) => a.priority - b.priority);
 
       twitchChannels.forEach((channel, idx) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "twitch-icon-wrapper";
-
-        // Channel icon
-        const iconDiv = document.createElement("div");
-        iconDiv.className = "twitch-icon-item" + (channel.live ? " live" : "");
-        iconDiv.draggable = true;
-        iconDiv.dataset.index = idx;
+        const tile = document.createElement("div");
+        tile.className = "twitch-sort-tile" + (channel.live ? " live" : "");
+        tile.draggable = true;
+        tile.dataset.index = idx;
+        tile.dataset.channel = channel.name;
+        tile.textContent = channel.name;
         
-        const img = document.createElement("img");
-        img.src = channel.avatar || 
-          `https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.name}-profile_image-70x70.png`;
-        img.alt = channel.name;
-        img.title = channel.name;
-        
-        iconDiv.appendChild(img);
-        wrapper.appendChild(iconDiv);
-
         // Drag and drop handlers
-        iconDiv.addEventListener('dragstart', (e) => {
+        tile.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', idx.toString());
-          iconDiv.classList.add('dragging');
+          tile.classList.add('dragging');
         });
 
-        iconDiv.addEventListener('dragend', (e) => {
-          iconDiv.classList.remove('dragging');
-          // Remove any lingering drop target indicators
+        tile.addEventListener('dragend', (e) => {
+          tile.classList.remove('dragging');
           document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-          // Update live bars after drag ends
           updateLiveBar();
           updateOverlayLiveIcons();
         });
 
-        iconDiv.addEventListener('dragenter', (e) => {
+        tile.addEventListener('dragenter', (e) => {
           e.preventDefault();
-          if (!iconDiv.classList.contains('dragging')) {
-            iconDiv.classList.add('drop-target');
+          if (!tile.classList.contains('dragging')) {
+            tile.classList.add('drop-target');
           }
         });
 
-        iconDiv.addEventListener('dragover', (e) => {
+        tile.addEventListener('dragover', (e) => {
           e.preventDefault();
         });
 
-        iconDiv.addEventListener('dragleave', (e) => {
-          iconDiv.classList.remove('drop-target');
+        tile.addEventListener('dragleave', (e) => {
+          tile.classList.remove('drop-target');
         });
 
-        iconDiv.addEventListener('drop', (e) => {
+        tile.addEventListener('drop', (e) => {
           e.preventDefault();
           const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-          const toIdx = parseInt(iconDiv.dataset.index);
+          const toIdx = parseInt(tile.dataset.index);
           
           if (fromIdx !== toIdx) {
             moveChannel(fromIdx, toIdx);
           }
           
-          iconDiv.classList.remove('drop-target');
+          tile.classList.remove('drop-target');
         });
 
-        // Click handler for playing channel
-        iconDiv.addEventListener('click', () => {
+        // Click handler
+        tile.addEventListener('click', () => {
           openTwitchOverlay(channel.name);
         });
 
-        list.appendChild(wrapper);
+        list.appendChild(tile);
       });
     }
 
@@ -2662,11 +2837,19 @@
     });
 
     function openTwitchOverlay(channel) {
+      // If we're already viewing this channel, do nothing
+      if (currentTwitchChannel === channel && document.getElementById("twitchOverlay").classList.contains("show")) {
+        return;
+      }
+
       // Close YouTube viewer if it's open
       closeOverlay();
       
-      document.body.classList.add("no-scroll");
-      document.getElementById("twitchOverlay").classList.add("show");
+      // If overlay isn't shown yet, show it
+      if (!document.getElementById("twitchOverlay").classList.contains("show")) {
+        document.body.classList.add("no-scroll");
+        document.getElementById("twitchOverlay").classList.add("show");
+      }
       
       // Update channel title
       document.getElementById("twitchChannelTitle").textContent = channel;
@@ -2694,10 +2877,69 @@
         </iframe>
       `;
 
+      currentTwitchChannel = channel;
+
       // Update all UI elements
       renderTwitchSortList();
       renderTwitchList();
       updateLiveBar();
+    }
+
+    function moveChannel(fromIdx, toIdx) {
+      // Swap channels
+      const temp = twitchChannels[fromIdx];
+      twitchChannels[fromIdx] = twitchChannels[toIdx];
+      twitchChannels[toIdx] = temp;
+
+      // Update priorities
+      twitchChannels.forEach((channel, idx) => {
+        channel.priority = idx + 1;
+      });
+
+      // Save and refresh all UI elements
+      saveTwitch();
+      renderTwitchSortList();
+      renderTwitchList();
+      updateLiveBar();
+      updateOverlayLiveIcons();
+
+      // Update the main Twitch tab view if needed
+      const liveChannels = twitchChannels
+        .sort((a, b) => a.priority - b.priority)
+        .filter(c => c.live);
+
+      if (liveChannels.length > 0) {
+        const topLiveChannel = liveChannels[0].name;
+        // Only switch if we're showing a different channel
+        if (document.getElementById("twitchPlayerContainer").innerHTML && 
+            (!currentTwitchChannel || currentTwitchChannel !== topLiveChannel)) {
+          playTwitchChannel(topLiveChannel);
+          currentTwitchChannel = topLiveChannel;
+        }
+      }
+    }
+
+    function playTwitchChannel(channel) {
+      const parentDomain = window.location.hostname;
+      const embedUrl =
+        `https://player.twitch.tv/` +
+        `?channel=${encodeURIComponent(channel)}` +
+        `&parent=${parentDomain}` +
+        `&autoplay=true`;
+
+      const container = document.getElementById("twitchPlayerContainer");
+      container.innerHTML = `
+        <iframe
+          src="${embedUrl}"
+          allowfullscreen="true"
+          scrolling="no"
+          height="100%"
+          width="100%">
+        </iframe>
+      `;
+      document.getElementById("twitchStatus").textContent = `Now watching: ${channel}`;
+      currentTwitchChannel = channel;
+      addLog(`Switched to live Twitch channel: ${channel}`);
     }
 
     function closeTwitchOverlay() {
@@ -2715,69 +2957,59 @@
       const sortedChannels = [...twitchChannels].sort((a, b) => a.priority - b.priority);
       
       sortedChannels.forEach((channel, idx) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "twitch-icon-wrapper";
-        
-        const iconDiv = document.createElement("div");
-        iconDiv.className = "twitch-icon-item" + (channel.live ? " live" : "");
-        iconDiv.draggable = true;
-        iconDiv.dataset.index = idx;
-        
-        const img = document.createElement("img");
-        img.src = channel.avatar || 
-          `https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.name}-profile_image-70x70.png`;
-        img.alt = channel.name;
-        img.title = channel.name;
-        
-        iconDiv.appendChild(img);
-        wrapper.appendChild(iconDiv);
+        const tile = document.createElement("div");
+        tile.className = "twitch-sort-tile" + (channel.live ? " live" : "");
+        tile.draggable = true;
+        tile.dataset.index = idx;
+        tile.dataset.channel = channel.name;
+        tile.textContent = channel.name;
         
         // Drag and drop handlers
-        iconDiv.addEventListener('dragstart', (e) => {
+        tile.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', idx.toString());
-          iconDiv.classList.add('dragging');
+          tile.classList.add('dragging');
         });
         
-        iconDiv.addEventListener('dragend', (e) => {
-          iconDiv.classList.remove('dragging');
+        tile.addEventListener('dragend', (e) => {
+          tile.classList.remove('dragging');
           document.querySelectorAll('.drop-target').forEach(el => 
             el.classList.remove('drop-target')
           );
         });
         
-        iconDiv.addEventListener('dragenter', (e) => {
+        tile.addEventListener('dragenter', (e) => {
           e.preventDefault();
-          if (!iconDiv.classList.contains('dragging')) {
-            iconDiv.classList.add('drop-target');
+          if (!tile.classList.contains('dragging')) {
+            tile.classList.add('drop-target');
           }
         });
         
-        iconDiv.addEventListener('dragover', (e) => {
+        tile.addEventListener('dragover', (e) => {
           e.preventDefault();
         });
         
-        iconDiv.addEventListener('dragleave', (e) => {
-          iconDiv.classList.remove('drop-target');
+        tile.addEventListener('dragleave', (e) => {
+          tile.classList.remove('drop-target');
         });
         
-        iconDiv.addEventListener('drop', (e) => {
+        tile.addEventListener('drop', (e) => {
           e.preventDefault();
           const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-          const toIdx = parseInt(iconDiv.dataset.index);
+          const toIdx = parseInt(tile.dataset.index);
           
           if (fromIdx !== toIdx) {
             moveChannel(fromIdx, toIdx);
           }
           
-          iconDiv.classList.remove('drop-target');
+          tile.classList.remove('drop-target');
         });
         
         // Click handler
-        iconDiv.addEventListener('click', () => {
+        tile.addEventListener('click', () => {
           openTwitchOverlay(channel.name);
         });
         
-        list.appendChild(wrapper);
+        list.appendChild(tile);
       });
     }
 
@@ -2796,9 +3028,8 @@
       // Save and refresh both lists
       saveTwitch();
       renderTwitchSortList();
-      renderTwitchList();
+    renderTwitchList();
     }
   </script>
 </body>
-</html>
 </html>
